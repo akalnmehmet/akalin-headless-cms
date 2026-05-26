@@ -1,0 +1,5 @@
+-r base.txt
+django-storages[s3]==1.14.4
+boto3==1.37.38
+redis==5.2.1
+django-ratelimit==4.1.0

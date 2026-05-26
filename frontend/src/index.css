@@ -1,0 +1,189 @@
+@import "tailwindcss";
+
+/* ── Design Tokens ──────────────────────────────────────────────────────── */
+@theme {
+  /* Renkler */
+  --color-background:              #faf8ff;
+  --color-surface:                 #faf8ff;
+  --color-surface-bright:          #faf8ff;
+  --color-surface-dim:             #d9d9e5;
+  --color-surface-variant:         #e1e2ed;
+  --color-surface-container:       #ededf9;
+  --color-surface-container-low:   #f3f3fe;
+  --color-surface-container-high:  #e7e7f3;
+  --color-surface-container-highest:#e1e2ed;
+  --color-surface-container-lowest:#ffffff;
+  --color-inverse-surface:         #2e3039;
+  --color-inverse-on-surface:      #f0f0fb;
+
+  --color-on-background:           #191b23;
+  --color-on-surface:              #191b23;
+  --color-on-surface-variant:      #434655;
+
+  --color-outline:                 #737686;
+  --color-outline-variant:         #c3c6d7;
+
+  --color-primary:                 #2563eb;
+  --color-primary-container:       #2563eb;
+  --color-primary-fixed:           #dbe1ff;
+  --color-primary-fixed-dim:       #b4c5ff;
+  --color-on-primary:              #ffffff;
+  --color-on-primary-fixed:        #00174b;
+  --color-on-primary-container:    #eeefff;
+  --color-on-primary-fixed-variant:#003ea8;
+  --color-inverse-primary:         #b4c5ff;
+
+  --color-secondary:               #495c95;
+  --color-secondary-container:     #acbfff;
+  --color-secondary-fixed:         #dbe1ff;
+  --color-secondary-fixed-dim:     #b4c5ff;
+  --color-on-secondary:            #ffffff;
+  --color-on-secondary-fixed:      #00174b;
+  --color-on-secondary-container:  #394c84;
+  --color-on-secondary-fixed-variant:#31447b;
+
+  --color-tertiary:                #943700;
+  --color-tertiary-container:      #bc4800;
+  --color-tertiary-fixed:          #ffdbcd;
+  --color-tertiary-fixed-dim:      #ffb596;
+  --color-on-tertiary:             #ffffff;
+  --color-on-tertiary-fixed:       #360f00;
+  --color-on-tertiary-fixed-variant:#7d2d00;
+  --color-on-tertiary-container:   #ffede6;
+
+  --color-error:                   #ba1a1a;
+  --color-error-container:         #ffdad6;
+  --color-on-error:                #ffffff;
+  --color-on-error-container:      #93000a;
+
+  /* Fontlar */
+  --font-sans:   "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono:   "JetBrains Mono", ui-monospace, monospace;
+
+  /* Border radius */
+  --radius-DEFAULT: 0.25rem;
+  --radius-lg:      0.5rem;
+  --radius-xl:      0.75rem;
+  --radius-2xl:     1rem;
+  --radius-full:    9999px;
+}
+
+/* ── Global base ────────────────────────────────────────────────────────── */
+body {
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  background-color: #faf8ff;
+  color: #191b23;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-mono, code, pre, .mono {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
+}
+
+/* ── Prose (blog içerik) ────────────────────────────────────────────────── */
+.prose h1 {
+  font-size: 1.875rem; font-weight: 700;
+  margin-top: 2rem; margin-bottom: 1rem;
+  color: #191b23; letter-spacing: -0.02em;
+}
+.prose h2 {
+  font-size: 1.5rem; font-weight: 600;
+  margin-top: 3rem; margin-bottom: 1rem;
+  color: #191b23; letter-spacing: -0.01em;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #c3c6d7;
+}
+.prose h3 {
+  font-size: 1.25rem; font-weight: 600;
+  margin-top: 1.5rem; margin-bottom: 0.5rem;
+  color: #191b23;
+}
+.prose p  { margin-top: 1rem; margin-bottom: 1rem; line-height: 1.75; }
+.prose a  { color: #2563eb; text-decoration: underline; }
+.prose a:hover { opacity: 0.8; }
+
+.prose ul {
+  list-style: none; padding: 0; margin: 1rem 0;
+}
+.prose ul li {
+  padding: 0.625rem 0;
+  border-bottom: 1px solid rgba(195, 198, 215, 0.5);
+}
+.prose ul li:last-child { border-bottom: none; }
+.prose ul li::before {
+  content: "·";
+  color: #2563eb;
+  font-weight: 700;
+  margin-right: 0.5rem;
+}
+.prose ol { list-style-type: decimal; padding-left: 1.5rem; margin: 1rem 0; }
+.prose ol li { margin: 0.4rem 0; }
+
+.prose blockquote {
+  border-left: 4px solid #2563eb;
+  padding: 0.75rem 1rem;
+  margin: 1.5rem 0;
+  background: #f3f3fe;
+  color: #434655;
+  font-style: italic;
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.prose pre {
+  background: #111827;
+  color: #d1d5db;
+  border-radius: 0.5rem;
+  padding: 0;
+  overflow-x: auto;
+  margin: 1.5rem 0;
+  border: 1px solid #c3c6d7;
+}
+.prose pre code {
+  display: block;
+  padding: 1rem;
+  background: transparent;
+  color: inherit;
+  font-size: 0.875rem;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+.prose code {
+  background: #f3f3fe;
+  color: #191b23;
+  border-radius: 0.25rem;
+  padding: 0.125rem 0.375rem;
+  font-size: 0.875rem;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  border: 1px solid #c3c6d7;
+}
+.prose img { border-radius: 0.75rem; max-width: 100%; margin: 1.5rem 0; }
+.prose table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+.prose th {
+  background: #f3f3fe; font-weight: 600;
+  text-align: left; padding: 0.5rem 1rem;
+  border: 1px solid #c3c6d7;
+}
+.prose td { padding: 0.5rem 1rem; border: 1px solid #c3c6d7; }
+
+/* ── Kod bloğu başlık çubuğu (GrapesJS içeriğindeki pre'ler için) ── */
+.prose .code-block {
+  background: #111827;
+  border-radius: 0.5rem;
+  border: 1px solid #c3c6d7;
+  overflow: hidden;
+  margin: 1.5rem 0;
+}
+.prose .code-block .code-header {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background: #1f2937;
+  border-bottom: 1px solid #374151;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
