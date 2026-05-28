@@ -80,11 +80,12 @@ export default function MatrixPreloader({ onFinish, name = "MEHMET AKALIN" }: Pr
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
 
       <div
-        className="relative z-10 text-center select-none"
+        className="relative z-10 select-none"
         style={{
           opacity:    showName ? 1 : 0,
           transform:  showName ? "scale(1)" : "scale(0.92)",
           transition: "opacity 0.8s ease, transform 0.8s ease",
+          display:    "inline-block",
         }}
       >
         <h1
@@ -96,15 +97,15 @@ export default function MatrixPreloader({ onFinish, name = "MEHMET AKALIN" }: Pr
             color:         "#ffffff",
             textShadow:    "0 0 40px rgba(255,255,255,0.2)",
             textTransform: "uppercase",
+            whiteSpace:    "nowrap",
           }}
         >
           {name}
         </h1>
         <div
           style={{
-            margin:   "12px auto 0",
-            width:    "320px",
-            maxWidth: "80vw",
+            marginTop: "12px",
+            width:     "100%",
             height:   "2px",
             background: "rgba(0,212,255,0.15)",
             position: "relative",
