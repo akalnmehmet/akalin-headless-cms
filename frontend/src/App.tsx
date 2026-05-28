@@ -1,8 +1,9 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 
 import CommandPalette from "./components/CommandPalette";
 import Layout from "./components/Layout";
+import MatrixPreloader from "./components/MatrixPreloader";
 import PageTransition from "./components/PageTransition";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { SUPPORTED_LANGS, type SupportedLang } from "./i18n";
@@ -86,6 +87,10 @@ function RootRedirect() {
 
 export default function App() {
   const { theme } = useThemeStore();
+  const isAdmin = location.pathname.startsWith("/admin");
+  const [showPreloader, setShowPreloader] = useState(
+    () => !isAdmin && !sessionStorage.getItem("preloader-shown")
+  );
 
   /* html elementine data-theme uygula — CSS token override'ları tetikler */
   useEffect(() => {
@@ -97,8 +102,14 @@ export default function App() {
     }
   }, [theme]);
 
+  const handlePreloaderFinish = () => {
+    sessionStorage.setItem("preloader-shown", "1");
+    setShowPreloader(false);
+  };
+
   return (
     <BrowserRouter>
+      {showPreloader && <MatrixPreloader onFinish={handlePreloaderFinish} name="MEHMET AKALIN" />}
       {/* Cmd+K komut paleti — tüm sayfalarda erişilebilir */}
       <CommandPalette />
       <Suspense fallback={<Spinner />}>
