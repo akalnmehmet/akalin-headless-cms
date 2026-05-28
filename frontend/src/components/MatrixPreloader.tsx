@@ -37,7 +37,7 @@ export default function MatrixPreloader({ onFinish, name = "MEHMET AKALIN" }: Pr
 
       for (let i = 0; i < drops.length; i++) {
         const bright = Math.random() > 0.92;
-        ctx.fillStyle = bright ? "#d4a017" : "#7a5c10";
+        ctx.fillStyle = bright ? "#00d4ff" : "#005f75";
         const char = chars[Math.floor(Math.random() * chars.length)];
         ctx.fillText(char, i * fontSize, drops[i] * fontSize);
 
@@ -105,8 +105,8 @@ export default function MatrixPreloader({ onFinish, name = "MEHMET AKALIN" }: Pr
             margin:     "12px auto 0",
             width:      "56px",
             height:     "2px",
-            background: "#d4a017",
-            boxShadow:  "0 0 10px #d4a017",
+            background: "#00d4ff",
+            boxShadow:  "0 0 10px #00d4ff",
           }}
         />
       </div>
