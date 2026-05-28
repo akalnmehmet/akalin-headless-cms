@@ -9,6 +9,11 @@ import { createPost, updatePost } from "../../api/posts";
 import { useAuthStore } from "../../store/authStore";
 import type { BlogPostAdmin, Category, PaginatedResponse, Tag } from "../../types";
 
+/** Aktif dil önekini localStorage'dan okur; varsayılan "tr" */
+function getCurrentLang(): string {
+  return localStorage.getItem("i18n-lang") ?? "tr";
+}
+
 interface Props {
   post?: BlogPostAdmin;
   onSaved?: () => void;
@@ -55,7 +60,8 @@ export default function GrapesEditor({ post, onSaved, onClose }: Props) {
   const [summaryEn,          setSummaryEn]          = useState(post?.summary_en   ?? "");
   const [contentJsonTr,      setContentJsonTr]      = useState<unknown>(post?.content_json ?? {});
   const [contentJsonEn,      setContentJsonEn]      = useState<unknown>(post?.content_json_en ?? {});
-  const [metaTitle,          setMetaTitle]          = useState(post?.meta_title   ?? "");
+  const [metaTitle,          setMetaTitle]          = useState(post?.meta_title        ?? "");
+  const [metaDescription,    setMetaDescription]    = useState(post?.meta_description  ?? "");
   const [status,             setStatus]             = useState<"DRAFT" | "PUBLISHED" | "ARCHIVED">(post?.status ?? "DRAFT");
   const [publishAt,          setPublishAt]          = useState(post?.publish_at   ?? "");
   const [selectedCategories, setSelectedCategories] = useState<string[]>(post?.categories ?? []);
@@ -85,6 +91,8 @@ export default function GrapesEditor({ post, onSaved, onClose }: Props) {
       setSelectedCategories((prev) => [...prev, res.data.id]);
       setNewCatInput("");
       setShowNewCat(false);
+    } catch {
+      setError("Kategori oluşturulamadı. Yetki kontrolü yapın veya aynı isimde kategori zaten mevcut olabilir.");
     } finally {
       setAddingCat(false);
     }
@@ -100,6 +108,8 @@ export default function GrapesEditor({ post, onSaved, onClose }: Props) {
       setSelectedTags((prev) => [...prev, res.data.id]);
       setNewTagInput("");
       setShowNewTag(false);
+    } catch {
+      setError("Etiket oluşturulamadı. Yetki kontrolü yapın veya aynı isimde etiket zaten mevcut olabilir.");
     } finally {
       setAddingTag(false);
     }
@@ -393,6 +403,7 @@ const kullanici: Kullanici = {
         summary: summary.trim(),
         summary_en: summaryEn.trim() || null,
         meta_title: metaTitle.trim(),
+        meta_description: metaDescription.trim(),
         status,
         publish_at: publishAt || null,
         content_html: trHtml,
@@ -615,6 +626,46 @@ const kullanici: Kullanici = {
                   disabled={saving}
                 />
               </div>
+
+              {/* SEO Açıklaması */}
+              <div className="flex flex-col gap-1">
+                <label
+                  className="text-[11px] font-semibold tracking-[0.05em] text-on-surface-variant uppercase flex items-center justify-between"
+                  style={{ fontFamily: "JetBrains Mono, monospace" }}
+                >
+                  <span>Meta Açıklaması</span>
+                  <span
+                    className={
+                      metaDescription.length > 160
+                        ? "text-error"
+                        : metaDescription.length > 120
+                        ? "text-[#f59e0b]"
+                        : "text-on-surface-variant/60"
+                    }
+                  >
+                    {metaDescription.length}/160
+                  </span>
+                </label>
+                <textarea
+                  className={`${fieldCls} resize-none`}
+                  rows={3}
+                  placeholder={
+                    (activeLang === "tr" ? summary : summaryEn).trim()
+                      ? `Boş bırakılırsa özet kullanılır: "${(activeLang === "tr" ? summary : summaryEn).slice(0, 80)}…"`
+                      : "Google arama sonuçlarında görünecek açıklama (maks. 160 karakter)…"
+                  }
+                  maxLength={200}
+                  value={metaDescription}
+                  onChange={(e) => setMetaDescription(e.target.value)}
+                  disabled={saving}
+                />
+                <p
+                  className="text-[11px] text-on-surface-variant/50 leading-relaxed"
+                  style={{ fontFamily: "JetBrains Mono, monospace" }}
+                >
+                  Boş bırakılırsa özet alanı kullanılır. 120–160 karakter arası idealdir.
+                </p>
+              </div>
             </div>
 
             {/* Sağ 1 sütun: Kategoriler + Etiketler */}
@@ -812,23 +863,35 @@ const kullanici: Kullanici = {
             {/* Açıklama */}
             {(() => {
               const currentSummary = activeLang === "tr" ? summary : summaryEn;
-              const seoDesc = currentSummary.trim();
+              // meta_description varsa onu kullan, yoksa summary'ye geri dön
+              const seoDesc = (metaDescription.trim() || currentSummary.trim());
+              const isFromMeta = !!metaDescription.trim();
               const over = seoDesc.length > 160;
               return (
-                <p
-                  className={`text-[13px] leading-relaxed ${over ? "text-error" : "text-on-surface-variant"}`}
-                  style={{ fontFamily: "arial, sans-serif" }}
-                >
-                  {seoDesc
-                    ? (over ? seoDesc.slice(0, 157) + "…" : seoDesc)
-                    : <span className="italic opacity-40">Meta açıklama veya özet burada görünecek. Maksimum 160 karakter.</span>
-                  }
-                  {over && (
-                    <span className="ml-2 text-[11px] text-error font-semibold" style={{ fontFamily: "JetBrains Mono, monospace" }}>
-                      {seoDesc.length}/160
+                <div>
+                  <p
+                    className={`text-[13px] leading-relaxed ${over ? "text-error" : "text-on-surface-variant"}`}
+                    style={{ fontFamily: "arial, sans-serif" }}
+                  >
+                    {seoDesc
+                      ? (over ? seoDesc.slice(0, 157) + "…" : seoDesc)
+                      : <span className="italic opacity-40">Meta açıklama veya özet burada görünecek. Maksimum 160 karakter.</span>
+                    }
+                    {over && (
+                      <span className="ml-2 text-[11px] text-error font-semibold" style={{ fontFamily: "JetBrains Mono, monospace" }}>
+                        {seoDesc.length}/160 — çok uzun
+                      </span>
+                    )}
+                  </p>
+                  {seoDesc && (
+                    <span
+                      className={`text-[10px] mt-1 inline-block ${isFromMeta ? "text-tertiary" : "text-on-surface-variant/40"}`}
+                      style={{ fontFamily: "JetBrains Mono, monospace" }}
+                    >
+                      {isFromMeta ? "▸ meta açıklaması kullanılıyor" : "▸ özet kullanılıyor (meta açıklama boş)"}
                     </span>
                   )}
-                </p>
+                </div>
               );
             })()}
 
@@ -844,8 +907,12 @@ const kullanici: Kullanici = {
               })()}
               {(() => {
                 const currentSummary = activeLang === "tr" ? summary : summaryEn;
-                const d = currentSummary.trim().length;
-                return <span className={d > 160 ? "text-error" : ""}>Açıklama: {d}/160</span>;
+                const d = (metaDescription.trim() || currentSummary.trim()).length;
+                return (
+                  <span className={d > 160 ? "text-error" : d > 120 ? "text-[#f59e0b]" : ""}>
+                    Açıklama: {d}/160
+                  </span>
+                );
               })()}
             </div>
           </div>
@@ -877,7 +944,7 @@ const kullanici: Kullanici = {
           <button
             type="button"
             disabled={!post?.slug}
-            onClick={() => post?.slug && window.open(`/blog/${post.slug}?preview=1`, "_blank")}
+            onClick={() => post?.slug && window.open(`/${getCurrentLang()}/blog/${post.slug}?preview=1`, "_blank")}
             className="px-4 py-2 rounded-lg text-[14px] font-medium text-on-surface-variant border border-outline-variant bg-surface hover:bg-surface-container-high hover:text-on-surface disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
             title={post?.slug ? "Taslağı önizle (yeni sekme)" : "Önce kaydedin"}
           >

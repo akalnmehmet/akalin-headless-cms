@@ -85,6 +85,15 @@ function RootRedirect() {
   return <Navigate to={`/${targetLang}`} replace />;
 }
 
+/**
+ * Dil prefix'i olmayan URL'leri /tr'ye yönlendirir.
+ * Query string (?preview=1 vb.) korunur.
+ */
+function LangPrefixRedirect() {
+  const { pathname, search } = useLocation();
+  return <Navigate to={`/tr${pathname}${search}`} replace />;
+}
+
 export default function App() {
   const { theme } = useThemeStore();
   const isAdmin = location.pathname.startsWith("/admin");
@@ -132,8 +141,8 @@ export default function App() {
               }
             />
 
-            {/* Dil prefix'i olmayan eski URL'ler — /tr'ye yönlendir */}
-            <Route path="*" element={<Navigate to={`/tr${location.pathname}`} replace />} />
+            {/* Dil prefix'i olmayan eski URL'ler — /tr'ye yönlendir (query string korunur) */}
+            <Route path="*" element={<LangPrefixRedirect />} />
           </Routes>
         </PageTransition>
       </Suspense>

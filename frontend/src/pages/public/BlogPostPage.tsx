@@ -77,10 +77,16 @@ export default function BlogPostPage() {
   };
 
   useDocumentMeta({
-    title:       post ? `${post.title} — ${t("blog.title")}` : undefined,
-    description: post?.meta_description || post?.summary || undefined,
-    image:       post?.featured_image?.file_url || undefined,
-    type:        "article",
+    title:               post ? `${post.title} — ${t("blog.title")}` : undefined,
+    description:         post?.meta_description || post?.summary || undefined,
+    image:               post?.featured_image?.file_url || undefined,
+    type:                "article",
+    locale:              i18n.language === "en" ? "en_US" : "tr_TR",
+    articlePublishedTime: post?.created_at,
+    articleModifiedTime:  post?.updated_at,
+    articleAuthor:        "Mehmet Akalın",
+    articleSection:       post?.categories[0]?.name,
+    articleTags:          post?.tags.map((tag) => tag.name),
   });
 
   useEffect(() => {
@@ -237,8 +243,43 @@ export default function BlogPostPage() {
     );
   }
 
+  /* ── JSON-LD Structured Data ── */
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": post.meta_title || post.title,
+    "description": post.meta_description || post.summary,
+    "image": post.featured_image?.file_url || undefined,
+    "url": typeof window !== "undefined" ? window.location.href : "",
+    "datePublished": post.created_at,
+    "dateModified": post.updated_at,
+    "inLanguage": i18n.language === "en" ? "en-US" : "tr-TR",
+    "author": {
+      "@type": "Person",
+      "name": "Mehmet Akalın",
+      "url": typeof window !== "undefined" ? window.location.origin : "",
+    },
+    "publisher": {
+      "@type": "Person",
+      "name": "Mehmet Akalın",
+      "url": typeof window !== "undefined" ? window.location.origin : "",
+    },
+    ...(post.categories.length > 0 && {
+      "articleSection": post.categories.map((c) => c.name).join(", "),
+    }),
+    ...(post.tags.length > 0 && {
+      "keywords": post.tags.map((t) => t.name).join(", "),
+    }),
+  };
+
   return (
     <>
+      {/* ── JSON-LD Structured Data ── */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       {/* ── Başa dön butonu ── */}
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}

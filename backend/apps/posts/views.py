@@ -135,18 +135,28 @@ class PostAdminViewSet(viewsets.ModelViewSet):
         return Response({"published": updated})
 
 
-class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
+class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [AllowAny]
     lookup_field = "slug"
 
+    def get_permissions(self):
+        """Okuma herkese açık; oluşturma/güncelleme/silme sadece admin."""
+        if self.action in ("create", "update", "partial_update", "destroy"):
+            return [IsAdminUser()]
+        return [AllowAny()]
 
-class TagViewSet(viewsets.ReadOnlyModelViewSet):
+
+class TagViewSet(viewsets.ModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    permission_classes = [AllowAny]
     lookup_field = "slug"
+
+    def get_permissions(self):
+        """Okuma herkese açık; oluşturma/güncelleme/silme sadece admin."""
+        if self.action in ("create", "update", "partial_update", "destroy"):
+            return [IsAdminUser()]
+        return [AllowAny()]
 
 
 class RssFeedView(APIView):
