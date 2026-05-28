@@ -62,6 +62,7 @@ export default function GrapesEditor({ post, onSaved, onClose }: Props) {
   const [contentJsonEn,      setContentJsonEn]      = useState<unknown>(post?.content_json_en ?? {});
   const [metaTitle,          setMetaTitle]          = useState(post?.meta_title        ?? "");
   const [metaDescription,    setMetaDescription]    = useState(post?.meta_description  ?? "");
+  const [slug,               setSlug]               = useState(post?.slug              ?? "");
   const [status,             setStatus]             = useState<"DRAFT" | "PUBLISHED" | "ARCHIVED">(post?.status ?? "DRAFT");
   const [publishAt,          setPublishAt]          = useState(post?.publish_at   ?? "");
   const [selectedCategories, setSelectedCategories] = useState<string[]>(post?.categories ?? []);
@@ -416,6 +417,7 @@ const kullanici: Kullanici = {
         summary_en: summaryEn.trim() || null,
         meta_title: metaTitle.trim(),
         meta_description: metaDescription.trim(),
+        ...(slug.trim() && { slug: slug.trim() }),
         status,
         publish_at: publishAt || null,
         content_html: trHtml,
@@ -617,6 +619,83 @@ const kullanici: Kullanici = {
                   onChange={(e) => activeLang === "tr" ? setSummary(e.target.value) : setSummaryEn(e.target.value)}
                   disabled={saving}
                 />
+              </div>
+
+              {/* URL / Slug */}
+              <div className="flex flex-col gap-1">
+                <label
+                  className="text-[11px] font-semibold tracking-[0.05em] text-on-surface-variant uppercase flex items-center justify-between"
+                  style={{ fontFamily: "JetBrains Mono, monospace" }}
+                >
+                  <span>URL (Slug)</span>
+                  {post?.slug && slug.trim() !== post.slug && (
+                    <span className="text-[#f59e0b] text-[10px] flex items-center gap-1 normal-case">
+                      <span className="material-symbols-outlined text-[12px]">warning</span>
+                      Mevcut linkler kırılabilir
+                    </span>
+                  )}
+                </label>
+                {/* Prefix + editable slug */}
+                <div className="flex items-stretch rounded-lg border border-outline-variant overflow-hidden focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-colors duration-150">
+                  <span
+                    className="flex items-center px-3 bg-surface-container text-on-surface-variant/60 text-[13px] border-r border-outline-variant shrink-0 select-none"
+                    style={{ fontFamily: "JetBrains Mono, monospace" }}
+                  >
+                    /blog/
+                  </span>
+                  <input
+                    className="flex-1 bg-surface-container-lowest px-3 py-2 text-[14px] text-on-surface placeholder:text-on-surface-variant/40 outline-none"
+                    style={{ fontFamily: "JetBrains Mono, monospace" }}
+                    placeholder={
+                      (activeLang === "tr" ? title : titleEn)
+                        ? (activeLang === "tr" ? title : titleEn)
+                            .toLowerCase()
+                            .replace(/ğ/g, "g").replace(/ü/g, "u").replace(/ş/g, "s")
+                            .replace(/ı/g, "i").replace(/ö/g, "o").replace(/ç/g, "c")
+                            .replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").slice(0, 60)
+                        : "bos-birakilirsa-basliktan-uretilir"
+                    }
+                    value={slug}
+                    onChange={(e) => {
+                      // Sadece izin verilen karakterlere izin ver: küçük harf, rakam, tire
+                      const val = e.target.value
+                        .toLowerCase()
+                        .replace(/ğ/g, "g").replace(/ü/g, "u").replace(/ş/g, "s")
+                        .replace(/ı/g, "i").replace(/ö/g, "o").replace(/ç/g, "c")
+                        .replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+                      setSlug(val);
+                    }}
+                    disabled={saving}
+                    maxLength={100}
+                  />
+                  {/* Başlıktan otomatik üret */}
+                  {(activeLang === "tr" ? title : titleEn) && (
+                    <button
+                      type="button"
+                      title="Başlıktan otomatik üret"
+                      onClick={() => {
+                        const src = activeLang === "tr" ? title : titleEn;
+                        setSlug(
+                          src.toLowerCase()
+                            .replace(/ğ/g, "g").replace(/ü/g, "u").replace(/ş/g, "s")
+                            .replace(/ı/g, "i").replace(/ö/g, "o").replace(/ç/g, "c")
+                            .replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").slice(0, 80)
+                        );
+                      }}
+                      className="px-3 text-on-surface-variant hover:text-primary transition-colors border-l border-outline-variant bg-surface-container"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">auto_awesome</span>
+                    </button>
+                  )}
+                </div>
+                <p
+                  className="text-[11px] text-on-surface-variant/50 leading-relaxed"
+                  style={{ fontFamily: "JetBrains Mono, monospace" }}
+                >
+                  {slug
+                    ? `Tam URL: akalin-cms.vercel.app/tr/blog/${slug}`
+                    : "Boş bırakılırsa yazı başlığından otomatik üretilir."}
+                </p>
               </div>
 
               {/* SEO Başlık */}
@@ -837,20 +916,32 @@ const kullanici: Kullanici = {
           </h3>
           <div className="border border-outline-variant rounded-xl p-5 bg-surface-container-lowest space-y-2">
             {/* URL satırı */}
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full bg-surface-variant border border-outline-variant flex items-center justify-center shrink-0">
-                <span className="text-[9px] font-bold text-on-surface-variant">M</span>
-              </div>
-              <div className="min-w-0">
-                <p className="text-[12px] text-on-surface leading-none">Portföy</p>
-                <p
-                  className="text-[11px] text-tertiary truncate"
-                  style={{ fontFamily: "monospace" }}
-                >
-                  {`siteurl.dev/blog/${post?.slug ?? ((activeLang === "tr" ? title : titleEn).toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").slice(0, 40) || "makale-slug")}`}
-                </p>
-              </div>
-            </div>
+            {(() => {
+              const currentTitle = activeLang === "tr" ? title : titleEn;
+              const previewSlug = slug.trim() || currentTitle
+                .toLowerCase()
+                .replace(/ğ/g, "g").replace(/ü/g, "u").replace(/ş/g, "s")
+                .replace(/ı/g, "i").replace(/ö/g, "o").replace(/ç/g, "c")
+                .replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").slice(0, 50)
+                || "makale-slug";
+              return (
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-surface-variant border border-outline-variant flex items-center justify-center shrink-0">
+                    <span className="text-[9px] font-bold text-on-surface-variant">M</span>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[12px] text-on-surface leading-none">Mehmet Akalın</p>
+                    <p className="text-[11px] text-tertiary truncate" style={{ fontFamily: "monospace" }}>
+                      akalin-cms.vercel.app
+                      <span className="text-tertiary/50"> › tr › blog › </span>
+                      <span className={slug.trim() ? "text-tertiary" : "text-tertiary/50 italic"}>
+                        {previewSlug}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Başlık */}
             {(() => {
