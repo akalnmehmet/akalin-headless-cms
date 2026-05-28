@@ -67,6 +67,44 @@ export default function GrapesEditor({ post, onSaved, onClose }: Props) {
   const [saving,  setSaving]  = useState(false);
   const [error,   setError]   = useState<string | null>(null);
 
+  /* ── Inline yeni kategori / etiket ── */
+  const [newCatInput,    setNewCatInput]    = useState("");
+  const [showNewCat,     setShowNewCat]     = useState(false);
+  const [addingCat,      setAddingCat]      = useState(false);
+  const [newTagInput,    setNewTagInput]    = useState("");
+  const [showNewTag,     setShowNewTag]     = useState(false);
+  const [addingTag,      setAddingTag]      = useState(false);
+
+  const handleAddCategory = async () => {
+    const name = newCatInput.trim();
+    if (!name) return;
+    setAddingCat(true);
+    try {
+      const res = await api.post<Category>("/api/categories/", { name });
+      setAllCategories((prev) => [...prev, res.data]);
+      setSelectedCategories((prev) => [...prev, res.data.id]);
+      setNewCatInput("");
+      setShowNewCat(false);
+    } finally {
+      setAddingCat(false);
+    }
+  };
+
+  const handleAddTag = async () => {
+    const name = newTagInput.trim();
+    if (!name) return;
+    setAddingTag(true);
+    try {
+      const res = await api.post<Tag>("/api/tags/", { name });
+      setAllTags((prev) => [...prev, res.data]);
+      setSelectedTags((prev) => [...prev, res.data.id]);
+      setNewTagInput("");
+      setShowNewTag(false);
+    } finally {
+      setAddingTag(false);
+    }
+  };
+
   /* ── Kategori & etiket yükle ── */
   useEffect(() => {
     Promise.all([
@@ -584,12 +622,45 @@ const kullanici: Kullanici = {
 
               {/* Kategoriler */}
               <div className="flex flex-col gap-1">
-                <label
-                  className="text-[11px] font-semibold tracking-[0.05em] text-on-surface-variant uppercase mb-2"
-                  style={{ fontFamily: "JetBrains Mono, monospace" }}
-                >
-                  Kategoriler
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label
+                    className="text-[11px] font-semibold tracking-[0.05em] text-on-surface-variant uppercase"
+                    style={{ fontFamily: "JetBrains Mono, monospace" }}
+                  >
+                    Kategoriler
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => { setShowNewCat((v) => !v); setNewCatInput(""); }}
+                    className="flex items-center gap-1 text-[11px] text-primary hover:opacity-70 transition-opacity"
+                    style={{ fontFamily: "JetBrains Mono, monospace" }}
+                  >
+                    <span className="material-symbols-outlined text-[14px]">add</span>
+                    Yeni
+                  </button>
+                </div>
+
+                {showNewCat && (
+                  <div className="flex gap-2 mb-2">
+                    <input
+                      autoFocus
+                      value={newCatInput}
+                      onChange={(e) => setNewCatInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") handleAddCategory(); if (e.key === "Escape") setShowNewCat(false); }}
+                      placeholder="Kategori adı..."
+                      className="flex-1 text-[13px] bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-1.5 text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddCategory}
+                      disabled={addingCat || !newCatInput.trim()}
+                      className="text-[12px] px-3 py-1.5 rounded-lg bg-primary text-on-primary font-medium disabled:opacity-40"
+                    >
+                      {addingCat ? "..." : "Ekle"}
+                    </button>
+                  </div>
+                )}
+
                 {loadingMeta ? (
                   <p className="text-[13px] text-on-surface-variant">Yükleniyor...</p>
                 ) : allCategories.length === 0 ? (
@@ -616,12 +687,45 @@ const kullanici: Kullanici = {
 
               {/* Etiketler */}
               <div className="flex flex-col gap-1 mt-2">
-                <label
-                  className="text-[11px] font-semibold tracking-[0.05em] text-on-surface-variant uppercase mb-2"
-                  style={{ fontFamily: "JetBrains Mono, monospace" }}
-                >
-                  Etiketler
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label
+                    className="text-[11px] font-semibold tracking-[0.05em] text-on-surface-variant uppercase"
+                    style={{ fontFamily: "JetBrains Mono, monospace" }}
+                  >
+                    Etiketler
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => { setShowNewTag((v) => !v); setNewTagInput(""); }}
+                    className="flex items-center gap-1 text-[11px] text-primary hover:opacity-70 transition-opacity"
+                    style={{ fontFamily: "JetBrains Mono, monospace" }}
+                  >
+                    <span className="material-symbols-outlined text-[14px]">add</span>
+                    Yeni
+                  </button>
+                </div>
+
+                {showNewTag && (
+                  <div className="flex gap-2 mb-2">
+                    <input
+                      autoFocus
+                      value={newTagInput}
+                      onChange={(e) => setNewTagInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") handleAddTag(); if (e.key === "Escape") setShowNewTag(false); }}
+                      placeholder="Etiket adı..."
+                      className="flex-1 text-[13px] bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-1.5 text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddTag}
+                      disabled={addingTag || !newTagInput.trim()}
+                      className="text-[12px] px-3 py-1.5 rounded-lg bg-primary text-on-primary font-medium disabled:opacity-40"
+                    >
+                      {addingTag ? "..." : "Ekle"}
+                    </button>
+                  </div>
+                )}
+
                 {loadingMeta ? (
                   <p className="text-[13px] text-on-surface-variant">Yükleniyor...</p>
                 ) : allTags.length === 0 ? (
