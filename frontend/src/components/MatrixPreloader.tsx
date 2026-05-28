@@ -102,13 +102,29 @@ export default function MatrixPreloader({ onFinish, name = "MEHMET AKALIN" }: Pr
         </h1>
         <div
           style={{
-            margin:     "12px auto 0",
-            width:      "56px",
-            height:     "2px",
-            background: "#00d4ff",
-            boxShadow:  "0 0 10px #00d4ff",
+            margin:   "12px auto 0",
+            width:    "320px",
+            maxWidth: "80vw",
+            height:   "2px",
+            background: "rgba(0,212,255,0.15)",
+            position: "relative",
+            overflow: "hidden",
           }}
-        />
+        >
+          <div
+            style={{
+              position:   "absolute",
+              top:        0,
+              left:       "50%",
+              height:     "100%",
+              background: "#00d4ff",
+              boxShadow:  "0 0 12px #00d4ff",
+              width:      showName ? "100%" : "0%",
+              transform:  "translateX(-50%)",
+              transition: "width 1.2s cubic-bezier(0.4,0,0.2,1)",
+            }}
+          />
+        </div>
       </div>
     </div>
   );
