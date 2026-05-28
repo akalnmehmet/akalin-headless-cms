@@ -1,0 +1,137 @@
+{
+  "nav": {
+    "home": "Ana Sayfa",
+    "projects": "Projeler",
+    "career": "Kariyer",
+    "blog": "Blog",
+    "about": "Hakkımda",
+    "contact": "İletişim",
+    "admin": "Admin",
+    "adminPanel": "Admin Paneli",
+    "search": "Ara"
+  },
+  "footer": {
+    "rights": "Tüm hakları saklıdır"
+  },
+  "theme": {
+    "switchToLight": "Açık temaya geç",
+    "switchToDark": "Koyu temaya geç",
+    "toggle": "Tema değiştir"
+  },
+  "lang": {
+    "switch": "EN",
+    "switchAriaLabel": "Switch to English"
+  },
+  "home": {
+    "heroTitle": "Merhaba, ben {{name}}",
+    "heroSubtitle": "Yazılım geliştirici & teknoloji meraklısı",
+    "featuredProjects": "Öne Çıkan Projeler",
+    "latestPosts": "Son Yazılar",
+    "viewAllProjects": "Tüm Projeleri Gör",
+    "viewAllPosts": "Tüm Yazıları Gör",
+    "statusBadge": "Şu an aktif",
+    "noProjects": "Henüz proje eklenmedi.",
+    "noPosts": "Henüz yazı eklenmedi."
+  },
+  "blog": {
+    "title": "Blog",
+    "description": "Yazılım, robotik ve teknoloji üzerine yazılar",
+    "search": "Yazı ara...",
+    "filterByCategory": "Kategoriye göre filtrele",
+    "filterByTag": "Etikete göre filtrele",
+    "allCategories": "Tüm Kategoriler",
+    "allTags": "Tüm Etiketler",
+    "readMore": "Devamını Oku",
+    "readingTime": "{{min}} dk okuma",
+    "views": "{{count}} görüntülenme",
+    "noResults": "Aramanızla eşleşen yazı bulunamadı.",
+    "noPosts": "Henüz yazı yok.",
+    "relatedPosts": "İlgili Yazılar",
+    "share": "Paylaş",
+    "shareSuccess": "Bağlantı kopyalandı!",
+    "tableOfContents": "İçindekiler",
+    "postNotFound": "Yazı bulunamadı.",
+    "backToBlog": "Blog'a dön",
+    "previewMode": "Önizleme modu — bu yazı henüz yayında değil",
+    "backToAdmin": "Admin'e dön",
+    "copy": "Kopyala",
+    "copied": "Kopyalandı!"
+  },
+  "projects": {
+    "title": "Projeler",
+    "description": "Geliştirdiğim projeler",
+    "viewLive": "Canlıyı Gör",
+    "viewCode": "Kodu Gör",
+    "techStack": "Teknolojiler",
+    "noProjects": "Henüz proje eklenmedi.",
+    "gallery": "Galeri",
+    "otherProjects": "Diğer Projeler",
+    "featuredProject": "Öne çıkan proje",
+    "activeDevelopment": "Aktif geliştirme",
+    "startDate": "Başlangıç",
+    "endDate": "Bitiş",
+    "projectNotFound": "Proje bulunamadı.",
+    "backToProjects": "Projelere dön",
+    "status": {
+      "ACTIVE": "Aktif",
+      "IN_PROGRESS": "Devam Ediyor",
+      "ARCHIVED": "Arşivlendi"
+    }
+  },
+  "career": {
+    "title": "Kariyer",
+    "description": "İş deneyimim, eğitimim ve gönüllü çalışmalarım",
+    "type": {
+      "WORK": "İş Deneyimi",
+      "EDUCATION": "Eğitim",
+      "VOLUNTEER": "Gönüllülük"
+    },
+    "present": "Devam Ediyor",
+    "noEntries": "Henüz kariyer kaydı eklenmedi."
+  },
+  "about": {
+    "title": "Hakkımda",
+    "description": "Benim hakkımda",
+    "skills": "Beceriler",
+    "downloadCV": "CV İndir",
+    "noCV": "CV henüz yüklenmedi."
+  },
+  "contact": {
+    "title": "İletişim",
+    "description": "Benimle iletişime geçin",
+    "name": "Ad Soyad",
+    "email": "E-posta",
+    "message": "Mesaj",
+    "send": "Gönder",
+    "sending": "Gönderiliyor...",
+    "sent": "Gönderildi",
+    "successMessage": "Mesajınız başarıyla gönderildi!",
+    "errorMessage": "Bir hata oluştu. Lütfen tekrar deneyin.",
+    "namePlaceholder": "Adınız Soyadınız",
+    "emailPlaceholder": "ornek@mail.com",
+    "messagePlaceholder": "Mesajınızı buraya yazın...",
+    "orDirectly": "Veya doğrudan"
+  },
+  "notFound": {
+    "title": "Sayfa Bulunamadı",
+    "description": "Aradığınız sayfa mevcut değil.",
+    "backHome": "Ana Sayfaya Dön",
+    "goBack": "Geri Git",
+    "errorCode": "hata kodu 404"
+  },
+  "common": {
+    "loading": "Yükleniyor...",
+    "error": "Bir hata oluştu.",
+    "retry": "Tekrar Dene",
+    "close": "Kapat",
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "delete": "Sil",
+    "edit": "Düzenle",
+    "preview": "Önizle",
+    "clearAll": "Tümünü temizle",
+    "all": "Tümü",
+    "filters": "Filtreler",
+    "loadMore": "Daha fazla yükle"
+  }
+}

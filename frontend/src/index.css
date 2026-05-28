@@ -1,66 +1,72 @@
 @import "tailwindcss";
 
-/* ── Design Tokens ──────────────────────────────────────────────────────── */
+/* ── Design Tokens (Dark Theme) ─────────────────────────────────────────── */
 @theme {
-  /* Renkler */
-  --color-background:              #faf8ff;
-  --color-surface:                 #faf8ff;
-  --color-surface-bright:          #faf8ff;
-  --color-surface-dim:             #d9d9e5;
-  --color-surface-variant:         #e1e2ed;
-  --color-surface-container:       #ededf9;
-  --color-surface-container-low:   #f3f3fe;
-  --color-surface-container-high:  #e7e7f3;
-  --color-surface-container-highest:#e1e2ed;
-  --color-surface-container-lowest:#ffffff;
-  --color-inverse-surface:         #2e3039;
-  --color-inverse-on-surface:      #f0f0fb;
+  /* ── Surfaces ── */
+  --color-background:               #0a0d14;
+  --color-surface:                  #111622;
+  --color-surface-bright:           #1a2035;
+  --color-surface-dim:              #080b11;
+  --color-surface-variant:          #1a2035;
+  --color-surface-container:        #141929;
+  --color-surface-container-low:    #0d1120;
+  --color-surface-container-high:   #1f2d4a;
+  --color-surface-container-highest:#243350;
+  --color-surface-container-lowest: #0a0d14;
+  --color-inverse-surface:          #e2e8f0;
+  --color-inverse-on-surface:       #0a0d14;
 
-  --color-on-background:           #191b23;
-  --color-on-surface:              #191b23;
-  --color-on-surface-variant:      #434655;
+  /* ── Text ── */
+  --color-on-background:            #e2e8f0;
+  --color-on-surface:               #e2e8f0;
+  --color-on-surface-variant:       #94a3b8;
 
-  --color-outline:                 #737686;
-  --color-outline-variant:         #c3c6d7;
+  /* ── Borders ── */
+  --color-outline:                  #64748b;
+  --color-outline-variant:          #1f2d4a;
 
-  --color-primary:                 #2563eb;
-  --color-primary-container:       #2563eb;
-  --color-primary-fixed:           #dbe1ff;
-  --color-primary-fixed-dim:       #b4c5ff;
-  --color-on-primary:              #ffffff;
-  --color-on-primary-fixed:        #00174b;
-  --color-on-primary-container:    #eeefff;
-  --color-on-primary-fixed-variant:#003ea8;
-  --color-inverse-primary:         #b4c5ff;
+  /* ── Primary (cyan) ── */
+  --color-primary:                  #00d4ff;
+  --color-primary-container:        #003344;
+  --color-primary-fixed:            #003344;
+  --color-primary-fixed-dim:        #004455;
+  --color-on-primary:               #0a0d14;
+  --color-on-primary-fixed:         #00d4ff;
+  --color-on-primary-container:     #00d4ff;
+  --color-on-primary-fixed-variant: #00aacc;
+  --color-inverse-primary:          #003344;
 
-  --color-secondary:               #495c95;
-  --color-secondary-container:     #acbfff;
-  --color-secondary-fixed:         #dbe1ff;
-  --color-secondary-fixed-dim:     #b4c5ff;
-  --color-on-secondary:            #ffffff;
-  --color-on-secondary-fixed:      #00174b;
-  --color-on-secondary-container:  #394c84;
-  --color-on-secondary-fixed-variant:#31447b;
+  /* ── Secondary (violet) ── */
+  --color-secondary:                #7c3aed;
+  --color-secondary-container:      #2d1a5e;
+  --color-secondary-fixed:          #2d1a5e;
+  --color-secondary-fixed-dim:      #3d2270;
+  --color-on-secondary:             #ffffff;
+  --color-on-secondary-fixed:       #7c3aed;
+  --color-on-secondary-container:   #a78bfa;
+  --color-on-secondary-fixed-variant:#8b5cf6;
 
-  --color-tertiary:                #943700;
-  --color-tertiary-container:      #bc4800;
-  --color-tertiary-fixed:          #ffdbcd;
-  --color-tertiary-fixed-dim:      #ffb596;
-  --color-on-tertiary:             #ffffff;
-  --color-on-tertiary-fixed:       #360f00;
-  --color-on-tertiary-fixed-variant:#7d2d00;
-  --color-on-tertiary-container:   #ffede6;
+  /* ── Tertiary (green) ── */
+  --color-tertiary:                 #10b981;
+  --color-tertiary-container:       #0d2e22;
+  --color-tertiary-fixed:           #0d2e22;
+  --color-tertiary-fixed-dim:       #14402e;
+  --color-on-tertiary:              #ffffff;
+  --color-on-tertiary-fixed:        #10b981;
+  --color-on-tertiary-fixed-variant:#34d399;
+  --color-on-tertiary-container:    #10b981;
 
-  --color-error:                   #ba1a1a;
-  --color-error-container:         #ffdad6;
-  --color-on-error:                #ffffff;
-  --color-on-error-container:      #93000a;
+  /* ── Error ── */
+  --color-error:                    #ef4444;
+  --color-error-container:          #2d0a0a;
+  --color-on-error:                 #ffffff;
+  --color-on-error-container:       #ef4444;
 
-  /* Fontlar */
-  --font-sans:   "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono:   "JetBrains Mono", ui-monospace, monospace;
+  /* ── Fonts ── */
+  --font-sans: "Syne", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
-  /* Border radius */
+  /* ── Radii ── */
   --radius-DEFAULT: 0.25rem;
   --radius-lg:      0.5rem;
   --radius-xl:      0.75rem;
@@ -68,12 +74,82 @@
   --radius-full:    9999px;
 }
 
-/* ── Global base ────────────────────────────────────────────────────────── */
+/* ── Light mode token overrides ──────────────────────────────────────────── */
+[data-theme="light"] {
+  /* Surfaces */
+  --color-background:               #faf8ff;
+  --color-surface:                  #ffffff;
+  --color-surface-bright:           #ffffff;
+  --color-surface-dim:              #d9d9e5;
+  --color-surface-variant:          #e1e2ed;
+  --color-surface-container:        #ededf9;
+  --color-surface-container-low:    #f3f3fe;
+  --color-surface-container-high:   #e7e7f3;
+  --color-surface-container-highest:#e1e2ed;
+  --color-surface-container-lowest: #ffffff;
+  --color-inverse-surface:          #2e3039;
+  --color-inverse-on-surface:       #f0f0fb;
+
+  /* Text */
+  --color-on-background:            #191b23;
+  --color-on-surface:               #191b23;
+  --color-on-surface-variant:       #434655;
+
+  /* Borders */
+  --color-outline:                  #737686;
+  --color-outline-variant:          #c3c6d7;
+
+  /* Primary (blue) */
+  --color-primary:                  #2563eb;
+  --color-primary-container:        #dbe1ff;
+  --color-primary-fixed:            #dbe1ff;
+  --color-primary-fixed-dim:        #b4c5ff;
+  --color-on-primary:               #ffffff;
+  --color-on-primary-fixed:         #00174b;
+  --color-on-primary-container:     #001070;
+  --color-on-primary-fixed-variant: #003ea8;
+  --color-inverse-primary:          #b4c5ff;
+
+  /* Secondary */
+  --color-secondary:                #5b21b6;
+  --color-secondary-container:      #ede9fe;
+  --color-on-secondary:             #ffffff;
+  --color-on-secondary-container:   #3b0764;
+
+  /* Tertiary (green) */
+  --color-tertiary:                 #059669;
+  --color-tertiary-container:       #d1fae5;
+  --color-on-tertiary:              #ffffff;
+  --color-on-tertiary-container:    #065f46;
+
+  /* Error */
+  --color-error:                    #ba1a1a;
+  --color-error-container:          #ffdad6;
+  --color-on-error:                 #ffffff;
+  --color-on-error-container:       #93000a;
+
+  /* Grid rengi */
+  --grid-line-color:                rgba(37, 99, 235, 0.05);
+  color-scheme: light;
+}
+
+/* ── Global base ─────────────────────────────────────────────────────────── */
+:root {
+  --grid-line-color: rgba(0, 212, 255, 0.08);
+  color-scheme: dark;
+}
+
 body {
-  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
-  background-color: #faf8ff;
-  color: #191b23;
+  font-family: "Syne", ui-sans-serif, system-ui, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-on-background);
   -webkit-font-smoothing: antialiased;
+  background-image:
+    linear-gradient(var(--grid-line-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line-color) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-attachment: fixed;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .font-mono, code, pre, .mono {
@@ -85,26 +161,29 @@ body {
   vertical-align: middle;
 }
 
-/* ── Prose (blog içerik) ────────────────────────────────────────────────── */
+/* ── Prose (blog içerik) ─────────────────────────────────────────────────── */
 .prose h1 {
   font-size: 1.875rem; font-weight: 700;
   margin-top: 2rem; margin-bottom: 1rem;
-  color: #191b23; letter-spacing: -0.02em;
+  color: #e2e8f0; letter-spacing: -0.02em;
+  font-family: "Syne", sans-serif;
 }
 .prose h2 {
   font-size: 1.5rem; font-weight: 600;
   margin-top: 3rem; margin-bottom: 1rem;
-  color: #191b23; letter-spacing: -0.01em;
+  color: #e2e8f0; letter-spacing: -0.01em;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid #c3c6d7;
+  border-bottom: 1px solid #1f2d4a;
+  font-family: "Syne", sans-serif;
 }
 .prose h3 {
   font-size: 1.25rem; font-weight: 600;
   margin-top: 1.5rem; margin-bottom: 0.5rem;
-  color: #191b23;
+  color: #e2e8f0;
+  font-family: "Syne", sans-serif;
 }
-.prose p  { margin-top: 1rem; margin-bottom: 1rem; line-height: 1.75; }
-.prose a  { color: #2563eb; text-decoration: underline; }
+.prose p  { margin-top: 1rem; margin-bottom: 1rem; line-height: 1.75; color: #cbd5e1; }
+.prose a  { color: #00d4ff; text-decoration: underline; }
 .prose a:hover { opacity: 0.8; }
 
 .prose ul {
@@ -112,36 +191,37 @@ body {
 }
 .prose ul li {
   padding: 0.625rem 0;
-  border-bottom: 1px solid rgba(195, 198, 215, 0.5);
+  border-bottom: 1px solid rgba(31, 45, 74, 0.6);
+  color: #cbd5e1;
 }
 .prose ul li:last-child { border-bottom: none; }
 .prose ul li::before {
   content: "·";
-  color: #2563eb;
+  color: #00d4ff;
   font-weight: 700;
   margin-right: 0.5rem;
 }
-.prose ol { list-style-type: decimal; padding-left: 1.5rem; margin: 1rem 0; }
+.prose ol { list-style-type: decimal; padding-left: 1.5rem; margin: 1rem 0; color: #cbd5e1; }
 .prose ol li { margin: 0.4rem 0; }
 
 .prose blockquote {
-  border-left: 4px solid #2563eb;
+  border-left: 4px solid #00d4ff;
   padding: 0.75rem 1rem;
   margin: 1.5rem 0;
-  background: #f3f3fe;
-  color: #434655;
+  background: rgba(0, 212, 255, 0.05);
+  color: #94a3b8;
   font-style: italic;
   border-radius: 0 0.5rem 0.5rem 0;
 }
 
 .prose pre {
-  background: #111827;
-  color: #d1d5db;
+  background: #0d1120;
+  color: #cbd5e1;
   border-radius: 0.5rem;
   padding: 0;
   overflow-x: auto;
   margin: 1.5rem 0;
-  border: 1px solid #c3c6d7;
+  border: 1px solid #1f2d4a;
 }
 .prose pre code {
   display: block;
@@ -152,28 +232,206 @@ body {
   font-family: "JetBrains Mono", ui-monospace, monospace;
 }
 .prose code {
-  background: #f3f3fe;
-  color: #191b23;
+  background: #141929;
+  color: #00d4ff;
   border-radius: 0.25rem;
   padding: 0.125rem 0.375rem;
   font-size: 0.875rem;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  border: 1px solid #c3c6d7;
+  border: 1px solid #1f2d4a;
 }
 .prose img { border-radius: 0.75rem; max-width: 100%; margin: 1.5rem 0; }
 .prose table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
 .prose th {
-  background: #f3f3fe; font-weight: 600;
+  background: #141929; font-weight: 600;
   text-align: left; padding: 0.5rem 1rem;
-  border: 1px solid #c3c6d7;
+  border: 1px solid #1f2d4a; color: #e2e8f0;
 }
-.prose td { padding: 0.5rem 1rem; border: 1px solid #c3c6d7; }
+.prose td { padding: 0.5rem 1rem; border: 1px solid #1f2d4a; color: #cbd5e1; }
+
+/* ── Light mode prose overrides ─────────────────────────────────────────── */
+[data-theme="light"] .prose h1,
+[data-theme="light"] .prose h2,
+[data-theme="light"] .prose h3      { color: #191b23; }
+[data-theme="light"] .prose h2      { border-bottom-color: #c3c6d7; }
+[data-theme="light"] .prose p,
+[data-theme="light"] .prose ol      { color: #434655; }
+[data-theme="light"] .prose ul li   { color: #434655; border-bottom-color: rgba(195,198,215,0.5); }
+[data-theme="light"] .prose ul li::before { color: #2563eb; }
+[data-theme="light"] .prose a       { color: #2563eb; }
+[data-theme="light"] .prose blockquote {
+  border-left-color: #2563eb;
+  background: #f3f3fe;
+  color: #434655;
+}
+[data-theme="light"] .prose pre     { background: #1e293b; border-color: #c3c6d7; }
+[data-theme="light"] .prose code    { background: #f3f3fe; color: #191b23; border-color: #c3c6d7; }
+[data-theme="light"] .prose th      { background: #f3f3fe; border-color: #c3c6d7; color: #191b23; }
+[data-theme="light"] .prose td      { border-color: #c3c6d7; color: #434655; }
+[data-theme="light"] .prose .code-block       { background: #1e293b; border-color: #c3c6d7; }
+[data-theme="light"] .prose .code-block .code-header {
+  background: #273548; border-bottom-color: #374151; color: #9ca3af;
+}
+
+/* ── Highlight.js tema override (dark) ────────────────────────────────────── */
+.hljs {
+  background: #0d1120 !important;
+  color: #cbd5e1 !important;
+  padding: 1rem !important;
+  border-radius: 0 !important;
+  font-size: 0.875rem !important;
+  font-family: "JetBrains Mono", ui-monospace, monospace !important;
+}
+/* Keyword, built-in */
+.hljs-keyword, .hljs-selector-tag, .hljs-built_in { color: #00d4ff !important; }
+/* String */
+.hljs-string, .hljs-attr { color: #a5f3fc !important; }
+/* Number, literal */
+.hljs-number, .hljs-literal { color: #10b981 !important; }
+/* Comment */
+.hljs-comment, .hljs-quote { color: #4c5a72 !important; font-style: italic !important; }
+/* Type, class */
+.hljs-type, .hljs-class .hljs-title, .hljs-title { color: #7c3aed !important; }
+/* Function */
+.hljs-function .hljs-title, .hljs-title.function_ { color: #f59e0b !important; }
+/* Variable */
+.hljs-variable, .hljs-template-variable { color: #e2e8f0 !important; }
+/* Tag */
+.hljs-tag { color: #00d4ff !important; }
+/* Attribute */
+.hljs-attribute { color: #94a3b8 !important; }
+/* Symbol, meta */
+.hljs-symbol, .hljs-bullet, .hljs-meta { color: #10b981 !important; }
+
+/* Light mode hljs */
+[data-theme="light"] .hljs {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+
+/* ── Başlık anchor linkleri ────────────────────────────────────────────── */
+.prose h2,
+.prose h3 { scroll-margin-top: 80px; }
+
+.prose .heading-anchor {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  color: #64748b;
+  text-decoration: none;
+  vertical-align: middle;
+}
+.prose h2:hover .heading-anchor,
+.prose h3:hover .heading-anchor { opacity: 1; }
+.prose .heading-anchor:hover { color: #00d4ff; }
+
+[data-theme="light"] .prose .heading-anchor:hover { color: #2563eb; }
+
+/* ── Print styles ────────────────────────────────────────────────────────── */
+@media print {
+  /* Sayfa kenar boşlukları */
+  @page { margin: 2cm; size: A4; }
+
+  /* Arkaplan grid + renkleri sıfırla */
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    background-image: none !important;
+    background-size: unset !important;
+    font-size: 11pt !important;
+  }
+
+  /* Nav, footer, chrome elemanlarını gizle */
+  nav, footer,
+  [role="progressbar"],
+  [aria-label="Başa dön"],
+  .heading-anchor,
+  .code-header-bar { display: none !important; }
+
+  /* Prose renkleri */
+  .prose { color: #000 !important; }
+  .prose h1, .prose h2, .prose h3 { color: #000 !important; }
+  .prose h2 { border-bottom-color: #ccc !important; }
+  .prose p, .prose li { color: #222 !important; line-height: 1.6 !important; }
+  .prose a { color: #1a56db !important; word-break: break-word; }
+  .prose blockquote {
+    border-left-color: #666 !important;
+    background: #f9f9f9 !important;
+    color: #333 !important;
+  }
+  .prose pre {
+    background: #f5f5f5 !important;
+    border: 1px solid #ccc !important;
+    break-inside: avoid;
+  }
+  .prose pre code, .hljs {
+    background: #f5f5f5 !important;
+    color: #000 !important;
+    font-size: 9pt !important;
+  }
+  .prose code {
+    background: #f0f0f0 !important;
+    color: #000 !important;
+    border-color: #ccc !important;
+  }
+  .prose img { max-width: 100% !important; break-inside: avoid; }
+  .prose table { break-inside: avoid; }
+  .prose th { background: #f0f0f0 !important; color: #000 !important; border-color: #ccc !important; }
+  .prose td { color: #222 !important; border-color: #ccc !important; }
+
+  /* hljs syntax renklerini geçersiz kıl */
+  .hljs-keyword, .hljs-selector-tag, .hljs-built_in,
+  .hljs-string, .hljs-attr,
+  .hljs-number, .hljs-literal,
+  .hljs-type, .hljs-class .hljs-title, .hljs-title,
+  .hljs-function .hljs-title, .hljs-title.function_,
+  .hljs-variable, .hljs-template-variable,
+  .hljs-tag, .hljs-attribute, .hljs-symbol,
+  .hljs-bullet, .hljs-meta { color: #000 !important; }
+  .hljs-comment, .hljs-quote { color: #666 !important; }
+
+  /* Sayfa kırmalarını kontrol et */
+  h2, h3, pre, figure, blockquote { break-inside: avoid; }
+
+  /* CV / About sayfası print stilleri */
+  #about-cv {
+    padding-top: 0 !important;
+    max-width: 100% !important;
+  }
+  #about-cv header h1 { font-size: 28pt !important; color: #000 !important; }
+  #about-cv .cv-section-title {
+    font-size: 13pt !important;
+    color: #000 !important;
+    border-bottom-color: #ccc !important;
+  }
+  #about-cv .text-on-surface { color: #000 !important; }
+  #about-cv .text-on-surface-variant { color: #444 !important; }
+  #about-cv .text-primary { color: #1a56db !important; }
+  #about-cv a { color: #1a56db !important; }
+  #about-cv [class*="border-outline"] { border-color: #ddd !important; }
+  #about-cv [class*="bg-surface"] { background: #fff !important; }
+}
+
+/* ── CV bölüm başlığı ── */
+.cv-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-on-surface-variant);
+  font-family: "JetBrains Mono", monospace;
+  border-bottom: 1px solid var(--color-outline-variant);
+  padding-bottom: 8px;
+  margin-bottom: 20px;
+}
 
 /* ── Kod bloğu başlık çubuğu (GrapesJS içeriğindeki pre'ler için) ── */
 .prose .code-block {
-  background: #111827;
+  background: #0d1120;
   border-radius: 0.5rem;
-  border: 1px solid #c3c6d7;
+  border: 1px solid #1f2d4a;
   overflow: hidden;
   margin: 1.5rem 0;
 }
@@ -181,9 +439,9 @@ body {
   display: flex;
   align-items: center;
   padding: 0.5rem 1rem;
-  background: #1f2937;
-  border-bottom: 1px solid #374151;
+  background: #141929;
+  border-bottom: 1px solid #1f2d4a;
   font-family: "JetBrains Mono", monospace;
   font-size: 0.75rem;
-  color: #9ca3af;
+  color: #64748b;
 }

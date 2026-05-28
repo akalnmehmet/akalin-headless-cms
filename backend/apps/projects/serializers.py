@@ -1,11 +1,12 @@
 from rest_framework import serializers
 
 from apps.media.serializers import MediaSerializer
+from apps.utils.serializers import TranslatedSerializerMixin
 
 from .models import Project
 
 
-class ProjectListSerializer(serializers.ModelSerializer):
+class ProjectListSerializer(TranslatedSerializerMixin, serializers.ModelSerializer):
     thumbnail = MediaSerializer(read_only=True)
 
     class Meta:
@@ -16,9 +17,10 @@ class ProjectListSerializer(serializers.ModelSerializer):
             "status", "is_featured", "sort_order",
             "start_date", "end_date",
         ]
+        translatable_fields = ["title", "description"]
 
 
-class ProjectDetailSerializer(serializers.ModelSerializer):
+class ProjectDetailSerializer(TranslatedSerializerMixin, serializers.ModelSerializer):
     thumbnail = MediaSerializer(read_only=True)
     gallery = MediaSerializer(many=True, read_only=True)
 
@@ -31,6 +33,7 @@ class ProjectDetailSerializer(serializers.ModelSerializer):
             "status", "is_featured", "sort_order",
             "start_date", "end_date",
         ]
+        translatable_fields = ["title", "description"]
 
 
 class ProjectAdminSerializer(serializers.ModelSerializer):
@@ -41,7 +44,7 @@ class ProjectAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = [
-            "id", "title", "slug", "description", "tech_stack",
+            "id", "title", "title_en", "slug", "description", "description_en", "tech_stack",
             "thumbnail", "thumbnail_detail",
             "gallery", "gallery_detail",
             "github_url", "live_url",

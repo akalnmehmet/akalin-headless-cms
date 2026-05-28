@@ -12,8 +12,10 @@ class Project(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=150)
+    title_en = models.CharField(max_length=150, blank=True, null=True)
     slug = models.SlugField(unique=True, max_length=180, allow_unicode=True)
     description = models.TextField()
+    description_en = models.TextField(blank=True, null=True)
     tech_stack = models.JSONField(default=list)
     thumbnail = models.ForeignKey(
         "media.Media",

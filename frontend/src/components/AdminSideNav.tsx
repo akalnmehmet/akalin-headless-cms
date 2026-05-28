@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 
-type Section = "posts" | "projects";
+import { useThemeStore } from "../store/themeStore";
+
+type Section = "dashboard" | "posts" | "projects" | "career" | "media" | "settings";
 
 interface Props {
   section: Section;
@@ -9,8 +11,12 @@ interface Props {
 }
 
 const NAV_ITEMS: { key: Section; icon: string; label: string }[] = [
-  { key: "posts",    icon: "article", label: "Yazılar"  },
-  { key: "projects", icon: "work",    label: "Projeler" },
+  { key: "dashboard", icon: "space_dashboard",  label: "Dashboard"     },
+  { key: "posts",     icon: "article",          label: "Yazılar"       },
+  { key: "projects",  icon: "work",             label: "Projeler"      },
+  { key: "career",    icon: "timeline",         label: "Kariyer"       },
+  { key: "media",     icon: "perm_media",       label: "Medya"         },
+  { key: "settings",  icon: "tune",             label: "Site Ayarları" },
 ];
 
 export default function AdminSideNav({
@@ -18,8 +24,10 @@ export default function AdminSideNav({
   onSectionChange,
   onLogout,
 }: Props) {
+  const { theme, toggleTheme } = useThemeStore();
+
   return (
-    <nav className="h-screen w-64 fixed left-0 top-0 border-r border-outline-variant bg-surface hidden md:flex flex-col p-4 z-20">
+    <nav className="h-screen w-64 fixed left-0 top-0 border-r border-outline-variant bg-surface/80 backdrop-blur-md hidden md:flex flex-col p-4 z-20">
 
       {/* Marka */}
       <div className="mb-12 px-2 flex flex-col gap-1">
@@ -66,6 +74,19 @@ export default function AdminSideNav({
 
       {/* Alt kısım */}
       <div className="flex flex-col gap-1 border-t border-outline-variant pt-4">
+        {/* Tema toggle */}
+        <button
+          onClick={toggleTheme}
+          className="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-container-high transition-colors duration-150 rounded-lg w-full text-left"
+        >
+          <span className="material-symbols-outlined text-[22px]">
+            {theme === "dark" ? "light_mode" : "dark_mode"}
+          </span>
+          <span className="text-[14px]">
+            {theme === "dark" ? "Açık Tema" : "Koyu Tema"}
+          </span>
+        </button>
+
         <Link
           to="/"
           className="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-container-high transition-colors duration-150 rounded-lg"

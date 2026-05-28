@@ -1,5 +1,6 @@
 import axios from "axios";
 
+import i18n from "../i18n";
 import { useAuthStore } from "../store/authStore";
 
 const api = axios.create({
@@ -7,12 +8,13 @@ const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-// Her isteğe Authorization header ekle
+// Her isteğe Authorization ve Accept-Language header'larını ekle
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().accessToken;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  config.headers["Accept-Language"] = i18n.language || "tr";
   return config;
 });
 

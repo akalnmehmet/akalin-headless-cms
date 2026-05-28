@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 
 import { createProject, updateProject } from "../../api/projects";
-import type { Project } from "../../types";
+import MediaPickerModal from "../../components/MediaPickerModal";
+import type { Media, Project } from "../../types";
 
 interface Props {
   project?: Project;
@@ -11,7 +12,9 @@ interface Props {
 
 const EMPTY: Partial<Project> = {
   title: "",
+  title_en: "",
   description: "",
+  description_en: "",
   tech_stack: [],
   github_url: "",
   live_url: "",
@@ -23,16 +26,30 @@ const EMPTY: Partial<Project> = {
 };
 
 export default function ProjectForm({ project, onSaved, onCancel }: Props) {
-  const [form, setForm] = useState<Partial<Project>>(project ?? EMPTY);
+  const [form,      setForm]      = useState<Partial<Project>>(project ?? EMPTY);
   const [techInput, setTechInput] = useState(project?.tech_stack.join(", ") ?? "");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [saving,    setSaving]    = useState(false);
+  const [error,     setError]     = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  /* Mevcut thumbnail — thumbnail_detail (admin serializer) varsa onu kullan */
+  const currentThumb: Media | null =
+    (project?.thumbnail_detail as Media | null | undefined) ??
+    (typeof project?.thumbnail === "object" ? project.thumbnail as Media | null : null) ??
+    null;
+  const [thumbPreview, setThumbPreview] = useState<Media | null>(currentThumb);
 
   // Proje değişince formu sıfırla
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setForm(project ?? EMPTY);
     setTechInput(project?.tech_stack.join(", ") ?? "");
     setError(null);
+    const thumb =
+      (project?.thumbnail_detail as Media | null | undefined) ??
+      (typeof project?.thumbnail === "object" ? project.thumbnail as Media | null : null) ??
+      null;
+    setThumbPreview(thumb);
   }, [project]);
 
   const set = (key: keyof Project, value: unknown) =>
@@ -43,12 +60,14 @@ export default function ProjectForm({ project, onSaved, onCancel }: Props) {
     setError(null);
     setSaving(true);
 
-    const payload: Partial<Project> = {
+    const payload = {
       ...form,
       tech_stack: techInput
         .split(",")
         .map((t) => t.trim())
         .filter(Boolean),
+      // Backend UUID bekler; tip baskısı gerekli
+      thumbnail: (thumbPreview?.id ?? null) as unknown as null,
     };
 
     try {
@@ -72,21 +91,72 @@ export default function ProjectForm({ project, onSaved, onCancel }: Props) {
   };
 
   const inputCls =
-    "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50";
-  const labelCls = "block text-xs font-medium text-gray-500 mb-1";
+    "w-full border border-outline-variant rounded-lg bg-surface-container-lowest px-3 py-2 text-[14px] text-on-surface placeholder:text-on-surface-variant/40 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors duration-150 disabled:opacity-50";
+
+  const labelCls =
+    "block text-[11px] font-semibold tracking-[0.05em] text-on-surface-variant uppercase mb-1";
 
   return (
+    <>
+    {pickerOpen && (
+      <MediaPickerModal
+        current={thumbPreview}
+        onSelect={(media) => setThumbPreview(media)}
+        onClose={() => setPickerOpen(false)}
+      />
+    )}
     <form onSubmit={handleSubmit} className="p-6 space-y-5">
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2">
+        <div className="bg-error-container border border-error/20 text-on-error-container text-[13px] rounded-lg px-4 py-2.5 flex items-center gap-2">
+          <span className="material-symbols-outlined text-[16px]">error</span>
           {error}
         </div>
       )}
 
-      {/* Başlık + Durum */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="col-span-2">
-          <label className={labelCls}>Proje Adı *</label>
+      {/* Kapak Görseli */}
+      <div>
+        <label className={labelCls} style={{ fontFamily: "JetBrains Mono, monospace" }}>
+          Kapak Görseli
+        </label>
+        <div
+          className="relative w-full h-40 rounded-xl border-2 border-dashed border-outline-variant overflow-hidden cursor-pointer hover:border-primary/50 transition-colors group"
+          onClick={() => setPickerOpen(true)}
+        >
+          {thumbPreview ? (
+            <>
+              <img
+                src={thumbPreview.file_url}
+                alt={thumbPreview.alt_text || thumbPreview.original_name}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white text-[13px] font-medium">
+                <span className="material-symbols-outlined text-[18px]">edit</span>
+                Değiştir
+              </div>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setThumbPreview(null); }}
+                className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/50 hover:bg-error/80 text-white flex items-center justify-center transition-colors"
+                title="Görseli kaldır"
+              >
+                <span className="material-symbols-outlined text-[14px]">close</span>
+              </button>
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full gap-2 text-on-surface-variant group-hover:text-primary transition-colors">
+              <span className="material-symbols-outlined text-[36px]">add_photo_alternate</span>
+              <span className="text-[13px] font-medium">Görsel seç</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Başlık (TR + EN) + Durum */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="md:col-span-2">
+          <label className={labelCls} style={{ fontFamily: "JetBrains Mono, monospace" }}>
+            Proje Adı (TR) *
+          </label>
           <input
             className={inputCls}
             value={form.title ?? ""}
@@ -96,10 +166,24 @@ export default function ProjectForm({ project, onSaved, onCancel }: Props) {
             disabled={saving}
           />
         </div>
-        <div>
-          <label className={labelCls}>Durum</label>
-          <select
+        <div className="md:col-span-2">
+          <label className={labelCls} style={{ fontFamily: "JetBrains Mono, monospace" }}>
+            Proje Adı (EN)
+          </label>
+          <input
             className={inputCls}
+            value={form.title_en ?? ""}
+            onChange={(e) => set("title_en", e.target.value)}
+            placeholder="AUtomotion-R (EN)"
+            disabled={saving}
+          />
+        </div>
+        <div>
+          <label className={labelCls} style={{ fontFamily: "JetBrains Mono, monospace" }}>
+            Durum
+          </label>
+          <select
+            className={inputCls + " appearance-none"}
             value={form.status ?? "ACTIVE"}
             onChange={(e) => set("status", e.target.value)}
             disabled={saving}
@@ -111,24 +195,40 @@ export default function ProjectForm({ project, onSaved, onCancel }: Props) {
         </div>
       </div>
 
-      {/* Açıklama */}
-      <div>
-        <label className={labelCls}>Açıklama *</label>
-        <textarea
-          className={`${inputCls} min-h-24 resize-y`}
-          value={form.description ?? ""}
-          onChange={(e) => set("description", e.target.value)}
-          placeholder="Projenin teknik detayları, kapsamı ve kazanımları..."
-          required
-          disabled={saving}
-        />
+      {/* Açıklama (TR + EN) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className={labelCls} style={{ fontFamily: "JetBrains Mono, monospace" }}>
+            Açıklama (TR) *
+          </label>
+          <textarea
+            className={`${inputCls} min-h-24 resize-y`}
+            value={form.description ?? ""}
+            onChange={(e) => set("description", e.target.value)}
+            placeholder="Projenin teknik detayları, kapsamı ve kazanımları..."
+            required
+            disabled={saving}
+          />
+        </div>
+        <div>
+          <label className={labelCls} style={{ fontFamily: "JetBrains Mono, monospace" }}>
+            Açıklama (EN)
+          </label>
+          <textarea
+            className={`${inputCls} min-h-24 resize-y`}
+            value={form.description_en ?? ""}
+            onChange={(e) => set("description_en", e.target.value)}
+            placeholder="Project technical details, scope, and key achievements..."
+            disabled={saving}
+          />
+        </div>
       </div>
 
       {/* Teknoloji stack */}
       <div>
-        <label className={labelCls}>
+        <label className={labelCls} style={{ fontFamily: "JetBrains Mono, monospace" }}>
           Teknoloji Stack{" "}
-          <span className="text-gray-400 font-normal">(virgülle ayır)</span>
+          <span className="text-on-surface-variant/50 normal-case font-normal">(virgülle ayır)</span>
         </label>
         <input
           className={inputCls}
@@ -146,7 +246,8 @@ export default function ProjectForm({ project, onSaved, onCancel }: Props) {
               .map((t) => (
                 <span
                   key={t}
-                  className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full"
+                  className="text-xs bg-surface-container text-on-surface-variant px-2 py-0.5 rounded-full border border-outline-variant"
+                  style={{ fontFamily: "JetBrains Mono, monospace" }}
                 >
                   {t}
                 </span>
@@ -158,7 +259,9 @@ export default function ProjectForm({ project, onSaved, onCancel }: Props) {
       {/* URL'ler */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className={labelCls}>GitHub URL</label>
+          <label className={labelCls} style={{ fontFamily: "JetBrains Mono, monospace" }}>
+            GitHub URL
+          </label>
           <input
             className={inputCls}
             type="url"
@@ -169,7 +272,9 @@ export default function ProjectForm({ project, onSaved, onCancel }: Props) {
           />
         </div>
         <div>
-          <label className={labelCls}>Demo URL</label>
+          <label className={labelCls} style={{ fontFamily: "JetBrains Mono, monospace" }}>
+            Demo URL
+          </label>
           <input
             className={inputCls}
             type="url"
@@ -184,7 +289,9 @@ export default function ProjectForm({ project, onSaved, onCancel }: Props) {
       {/* Tarihler + Sıra + Öne çıkar */}
       <div className="grid grid-cols-4 gap-4">
         <div>
-          <label className={labelCls}>Başlangıç</label>
+          <label className={labelCls} style={{ fontFamily: "JetBrains Mono, monospace" }}>
+            Başlangıç
+          </label>
           <input
             className={inputCls}
             type="date"
@@ -194,7 +301,9 @@ export default function ProjectForm({ project, onSaved, onCancel }: Props) {
           />
         </div>
         <div>
-          <label className={labelCls}>Bitiş</label>
+          <label className={labelCls} style={{ fontFamily: "JetBrains Mono, monospace" }}>
+            Bitiş
+          </label>
           <input
             className={inputCls}
             type="date"
@@ -204,7 +313,9 @@ export default function ProjectForm({ project, onSaved, onCancel }: Props) {
           />
         </div>
         <div>
-          <label className={labelCls}>Sıra</label>
+          <label className={labelCls} style={{ fontFamily: "JetBrains Mono, monospace" }}>
+            Sıra
+          </label>
           <input
             className={inputCls}
             type="number"
@@ -218,34 +329,36 @@ export default function ProjectForm({ project, onSaved, onCancel }: Props) {
           <label className="flex items-center gap-2 cursor-pointer select-none">
             <input
               type="checkbox"
-              className="w-4 h-4 rounded"
+              className="w-4 h-4 rounded border-outline-variant bg-surface-container-low accent-primary"
               checked={form.is_featured ?? false}
               onChange={(e) => set("is_featured", e.target.checked)}
               disabled={saving}
             />
-            <span className="text-sm text-gray-600">Öne çıkar</span>
+            <span className="text-[13px] text-on-surface-variant">Öne çıkar</span>
           </label>
         </div>
       </div>
 
       {/* Butonlar */}
-      <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
+      <div className="flex justify-end gap-3 pt-2 border-t border-outline-variant">
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+          className="px-4 py-2 text-[13px] text-on-surface-variant hover:text-on-surface transition-colors"
           disabled={saving}
         >
           İptal
         </button>
         <button
           type="submit"
-          className="px-5 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          className="px-5 py-2 bg-primary text-on-primary text-[13px] font-semibold rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-2"
           disabled={saving}
         >
+          <span className="material-symbols-outlined text-[16px]">save</span>
           {saving ? "Kaydediliyor..." : project ? "Güncelle" : "Oluştur"}
         </button>
       </div>
     </form>
+    </>
   );
 }

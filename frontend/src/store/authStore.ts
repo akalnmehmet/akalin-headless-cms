@@ -22,8 +22,10 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "auth-storage",
-      // Refresh token localStorage'da saklanır; production'da httpOnly cookie tercih edilir
-      partialize: (state) => ({ refreshToken: state.refreshToken }),
+      partialize: (state) => ({
+        accessToken:  state.accessToken,
+        refreshToken: state.refreshToken,
+      }),
     }
   )
 );

@@ -1,0 +1,137 @@
+{
+  "nav": {
+    "home": "Home",
+    "projects": "Projects",
+    "career": "Career",
+    "blog": "Blog",
+    "about": "About",
+    "contact": "Contact",
+    "admin": "Admin",
+    "adminPanel": "Admin Panel",
+    "search": "Search"
+  },
+  "footer": {
+    "rights": "All rights reserved"
+  },
+  "theme": {
+    "switchToLight": "Switch to light theme",
+    "switchToDark": "Switch to dark theme",
+    "toggle": "Toggle theme"
+  },
+  "lang": {
+    "switch": "TR",
+    "switchAriaLabel": "Türkçeye geç"
+  },
+  "home": {
+    "heroTitle": "Hi, I'm {{name}}",
+    "heroSubtitle": "Software developer & technology enthusiast",
+    "featuredProjects": "Featured Projects",
+    "latestPosts": "Latest Posts",
+    "viewAllProjects": "View All Projects",
+    "viewAllPosts": "View All Posts",
+    "statusBadge": "Currently active",
+    "noProjects": "No projects added yet.",
+    "noPosts": "No posts added yet."
+  },
+  "blog": {
+    "title": "Blog",
+    "description": "Articles on software, robotics and technology",
+    "search": "Search posts...",
+    "filterByCategory": "Filter by category",
+    "filterByTag": "Filter by tag",
+    "allCategories": "All Categories",
+    "allTags": "All Tags",
+    "readMore": "Read More",
+    "readingTime": "{{min}} min read",
+    "views": "{{count}} views",
+    "noResults": "No posts found matching your search.",
+    "noPosts": "No posts yet.",
+    "relatedPosts": "Related Posts",
+    "share": "Share",
+    "shareSuccess": "Link copied!",
+    "tableOfContents": "Table of Contents",
+    "postNotFound": "Post not found.",
+    "backToBlog": "Back to blog",
+    "previewMode": "Preview mode — this post is not published yet",
+    "backToAdmin": "Back to Admin",
+    "copy": "Copy",
+    "copied": "Copied!"
+  },
+  "projects": {
+    "title": "Projects",
+    "description": "Projects I've built",
+    "viewLive": "View Live",
+    "viewCode": "View Code",
+    "techStack": "Tech Stack",
+    "noProjects": "No projects added yet.",
+    "gallery": "Gallery",
+    "otherProjects": "Other Projects",
+    "featuredProject": "Featured Project",
+    "activeDevelopment": "Active development",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "projectNotFound": "Project not found.",
+    "backToProjects": "Back to projects",
+    "status": {
+      "ACTIVE": "Active",
+      "IN_PROGRESS": "In Progress",
+      "ARCHIVED": "Archived"
+    }
+  },
+  "career": {
+    "title": "Career",
+    "description": "My work experience, education and volunteering",
+    "type": {
+      "WORK": "Work Experience",
+      "EDUCATION": "Education",
+      "VOLUNTEER": "Volunteering"
+    },
+    "present": "Present",
+    "noEntries": "No career entries added yet."
+  },
+  "about": {
+    "title": "About Me",
+    "description": "About me",
+    "skills": "Skills",
+    "downloadCV": "Download CV",
+    "noCV": "CV not uploaded yet."
+  },
+  "contact": {
+    "title": "Contact",
+    "description": "Get in touch with me",
+    "name": "Full Name",
+    "email": "Email",
+    "message": "Message",
+    "send": "Send",
+    "sending": "Sending...",
+    "sent": "Sent",
+    "successMessage": "Your message has been sent successfully!",
+    "errorMessage": "An error occurred. Please try again.",
+    "namePlaceholder": "Your Full Name",
+    "emailPlaceholder": "example@mail.com",
+    "messagePlaceholder": "Write your message here...",
+    "orDirectly": "Or directly"
+  },
+  "notFound": {
+    "title": "Page Not Found",
+    "description": "The page you're looking for doesn't exist.",
+    "backHome": "Back to Home",
+    "goBack": "Go Back",
+    "errorCode": "error code 404"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred.",
+    "retry": "Try Again",
+    "close": "Close",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "preview": "Preview",
+    "clearAll": "Clear All",
+    "all": "All",
+    "filters": "Filters",
+    "loadMore": "Load More"
+  }
+}

@@ -7,6 +7,9 @@ export const getPosts = (params?: Record<string, string>) =>
 export const getPostBySlug = (slug: string) =>
   api.get<BlogPostDetail>(`/api/posts/${slug}/`).then((r) => r.data);
 
+export const getPostBySlugPreview = (slug: string) =>
+  api.get<BlogPostDetail>(`/api/posts/${slug}/`, { params: { preview: "1" } }).then((r) => r.data);
+
 export const getRelatedPosts = (slug: string) =>
   api.get<BlogPostList[]>(`/api/posts/${slug}/related/`).then((r) => r.data);
 

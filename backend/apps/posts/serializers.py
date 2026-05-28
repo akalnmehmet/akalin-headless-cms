@@ -1,28 +1,31 @@
 from rest_framework import serializers
 
 from apps.media.serializers import MediaSerializer
+from apps.utils.serializers import TranslatedSerializerMixin
 
 from .models import BlogPost, Category, Tag
 
 
-class CategorySerializer(serializers.ModelSerializer):
+class CategorySerializer(TranslatedSerializerMixin, serializers.ModelSerializer):
     post_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Category
         fields = ["id", "name", "slug", "description", "post_count"]
+        translatable_fields = ["name", "description"]
 
     def get_post_count(self, obj):
         return obj.posts.filter(status=BlogPost.Status.PUBLISHED).count()
 
 
-class TagSerializer(serializers.ModelSerializer):
+class TagSerializer(TranslatedSerializerMixin, serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = ["id", "name", "slug", "color"]
+        translatable_fields = ["name"]
 
 
-class PostListSerializer(serializers.ModelSerializer):
+class PostListSerializer(TranslatedSerializerMixin, serializers.ModelSerializer):
     featured_image = MediaSerializer(read_only=True)
     categories = CategorySerializer(many=True, read_only=True)
     tags = TagSerializer(many=True, read_only=True)
@@ -34,9 +37,10 @@ class PostListSerializer(serializers.ModelSerializer):
             "featured_image", "categories", "tags",
             "reading_time", "view_count", "created_at",
         ]
+        translatable_fields = ["title", "summary"]
 
 
-class PostDetailSerializer(serializers.ModelSerializer):
+class PostDetailSerializer(TranslatedSerializerMixin, serializers.ModelSerializer):
     featured_image = MediaSerializer(read_only=True)
     categories = CategorySerializer(many=True, read_only=True)
     tags = TagSerializer(many=True, read_only=True)
@@ -49,6 +53,7 @@ class PostDetailSerializer(serializers.ModelSerializer):
             "meta_title", "meta_description",
             "reading_time", "view_count", "created_at", "updated_at",
         ]
+        translatable_fields = ["title", "summary", "content_html"]
 
 
 class PostAdminSerializer(serializers.ModelSerializer):
@@ -68,8 +73,8 @@ class PostAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = BlogPost
         fields = [
-            "id", "title", "slug", "summary",
-            "content_html", "content_json", "status",
+            "id", "title", "title_en", "slug", "summary", "summary_en",
+            "content_html", "content_html_en", "content_json", "content_json_en", "status", "publish_at",
             "featured_image", "featured_image_detail",
             "categories", "categories_detail",
             "tags", "tags_detail",

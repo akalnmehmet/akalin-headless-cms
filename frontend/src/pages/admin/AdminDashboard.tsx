@@ -2,29 +2,35 @@ import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { logout } from "../../api/auth";
+import { deleteCareerEntry, getCareer } from "../../api/career";
 import { deletePost, getAdminPosts, patchPost } from "../../api/posts";
 import { deleteProject, getAdminProjects, patchProject, reorderProjects } from "../../api/projects";
 import AdminSideNav from "../../components/AdminSideNav";
+import SortableList from "../../components/SortableList";
 import { useAuthStore } from "../../store/authStore";
-import type { BlogPostAdmin, Project } from "../../types";
+import type { BlogPostAdmin, CareerEntry, Project } from "../../types";
+import CareerForm from "./CareerForm";
+import MediaLibrary from "./MediaLibrary";
 import ProjectForm from "./ProjectForm";
+import SiteSettingsForm from "./SiteSettingsForm";
 
 const GrapesEditor = lazy(() => import("./GrapesEditor"));
 
-type Section  = "posts" | "projects";
+type Section  = "dashboard" | "posts" | "projects" | "career" | "media" | "settings";
 type PostTab  = "list" | "new" | "edit";
 type ProjTab  = "list" | "new" | "edit";
+type CareerTab = "list" | "new" | "edit";
 
 const POST_STATUS: Record<string, { label: string; cls: string }> = {
-  PUBLISHED: { label: "Yayında",  cls: "bg-green-100 text-green-700"  },
-  DRAFT:     { label: "Taslak",   cls: "bg-amber-100 text-amber-700"  },
-  ARCHIVED:  { label: "Arşiv",    cls: "bg-gray-100  text-gray-500"   },
+  PUBLISHED: { label: "Yayında", cls: "bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20" },
+  DRAFT:     { label: "Taslak",  cls: "bg-[#f59e0b]/10 text-[#f59e0b] border border-[#f59e0b]/20" },
+  ARCHIVED:  { label: "Arşiv",   cls: "bg-surface-container text-outline border border-outline-variant" },
 };
 
 const PROJECT_STATUS: Record<string, { label: string; cls: string }> = {
-  ACTIVE:      { label: "Tamamlandı",   cls: "bg-green-100 text-green-700" },
-  IN_PROGRESS: { label: "Devam ediyor", cls: "bg-amber-100 text-amber-700" },
-  ARCHIVED:    { label: "Arşiv",        cls: "bg-gray-100  text-gray-500"  },
+  ACTIVE:      { label: "Tamamlandı",   cls: "bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20" },
+  IN_PROGRESS: { label: "Devam ediyor", cls: "bg-[#f59e0b]/10 text-[#f59e0b] border border-[#f59e0b]/20" },
+  ARCHIVED:    { label: "Arşiv",        cls: "bg-surface-container text-outline border border-outline-variant" },
 };
 
 // ── Tablo satır aksiyonları için paylaşımlı buton ──────────────────────────
@@ -48,11 +54,13 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
 
   /* ── Bölüm & sekme durumu ── */
-  const [section,    setSection]    = useState<Section>("posts");
+  const [section,    setSection]    = useState<Section>("dashboard");
   const [postTab,    setPostTab]    = useState<PostTab>("list");
   const [projTab,    setProjTab]    = useState<ProjTab>("list");
+  const [careerTab,  setCareerTab]  = useState<CareerTab>("list");
   const [editingPost,    setEditingPost]    = useState<BlogPostAdmin | undefined>();
   const [editingProject, setEditingProject] = useState<Project | undefined>();
+  const [editingCareer,  setEditingCareer]  = useState<CareerEntry | undefined>();
 
   /* ── Veri ── */
   const [posts,           setPosts]           = useState<BlogPostAdmin[]>([]);
@@ -61,6 +69,8 @@ export default function AdminDashboard() {
   const [projects,        setProjects]        = useState<Project[]>([]);
   const [projectCount,    setProjectCount]    = useState(0);
   const [projectsLoading, setProjectsLoading] = useState(true);
+  const [careerEntries,   setCareerEntries]   = useState<CareerEntry[]>([]);
+  const [careerLoading,   setCareerLoading]   = useState(true);
 
   /* ── Veri yükleme ── */
   const loadPosts = useCallback(() => {
@@ -77,8 +87,19 @@ export default function AdminDashboard() {
       .finally(() => setProjectsLoading(false));
   }, []);
 
+  const loadCareer = useCallback(() => {
+    setCareerLoading(true);
+    getCareer()
+      .then(setCareerEntries)
+      .finally(() => setCareerLoading(false));
+  }, []);
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadPosts(); },    [loadPosts]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadProjects(); }, [loadProjects]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { loadCareer(); },   [loadCareer]);
 
   /* ── Post aksiyonları ── */
   const handlePostStatusToggle = async (p: BlogPostAdmin) => {
@@ -110,40 +131,45 @@ export default function AdminDashboard() {
   const handleNewProject = () => { setEditingProject(undefined); setProjTab("new"); };
   const handleCloseProj  = () => { setProjTab("list"); setEditingProject(undefined); };
 
-  const handleProjectMove = async (index: number, dir: "up" | "down") => {
-    const target = dir === "up" ? index - 1 : index + 1;
-    if (target < 0 || target >= projects.length) return;
-    const updated = [...projects];
-    const aO = updated[index].sort_order;
-    const bO = updated[target].sort_order;
-    const newA = aO === bO ? (dir === "up" ? bO - 1 : bO + 1) : bO;
-    const newB = aO === bO ? aO : aO;
-    await reorderProjects([
-      { id: updated[index].id, sort_order: newA },
-      { id: updated[target].id, sort_order: newB },
-    ]);
-    loadProjects();
+  const handleProjectReorder = async (reordered: Project[]) => {
+    // Önce UI'ı anında güncelle
+    setProjects(reordered);
+    // Sonra her projenin yeni sort_order'ını kaydet
+    await reorderProjects(
+      reordered.map((p, idx) => ({ id: p.id, sort_order: idx }))
+    );
   };
 
   /* ── Logout ── */
   const handleLogout = async () => {
-    if (refreshToken) { try { await logout(refreshToken); } catch {} }
+    if (refreshToken) { try { await logout(refreshToken); } catch { /* blacklist hatası yoksay */ } }
     clearTokens();
     navigate("/admin/login");
   };
 
-  /* ── Sidebar aksiyonları ── */
-  const handleNewItem = () => {
-    if (section === "posts")    handleNewPost();
-    else                        handleNewProject();
+  /* ── Career aksiyonları ── */
+  const handleCareerEdit   = (e: CareerEntry) => { setEditingCareer(e); setCareerTab("edit"); };
+  const handleCareerSaved  = () => { setCareerTab("list"); setEditingCareer(undefined); loadCareer(); };
+  const handleNewCareer    = () => { setEditingCareer(undefined); setCareerTab("new"); };
+  const handleCloseCareer  = () => { setCareerTab("list"); setEditingCareer(undefined); };
+  const handleCareerDelete = async (e: CareerEntry) => {
+    if (!confirm(`"${e.position} @ ${e.company}" silinsin mi?`)) return;
+    await deleteCareerEntry(e.id);
+    loadCareer();
   };
 
   const handleSectionChange = (s: Section) => {
     setSection(s);
     setPostTab("list");
     setProjTab("list");
+    setCareerTab("list");
     setEditingPost(undefined);
     setEditingProject(undefined);
+    setEditingCareer(undefined);
+  };
+
+  const TYPE_LABEL: Record<string, string> = {
+    WORK: "İş", EDUCATION: "Eğitim", VOLUNTEER: "Gönüllülük",
   };
 
   /* ── Editör açık mı? ── */
@@ -153,7 +179,7 @@ export default function AdminDashboard() {
 
   /* ── Render ── */
   return (
-    <div className="flex h-screen overflow-hidden bg-surface-container-lowest text-on-surface antialiased">
+    <div className="flex h-screen overflow-hidden text-on-surface antialiased">
 
       {/* Sidebar */}
       <AdminSideNav
@@ -164,6 +190,201 @@ export default function AdminDashboard() {
 
       {/* Ana içerik */}
       <main className="md:ml-64 flex-1 flex flex-col h-screen overflow-hidden">
+
+        {/* ═══ DASHBOARD ═══ */}
+        {section === "dashboard" && (() => {
+          const published  = posts.filter((p) => p.status === "PUBLISHED").length;
+          const draft      = posts.filter((p) => p.status === "DRAFT").length;
+          const archived   = posts.filter((p) => p.status === "ARCHIVED").length;
+          const totalViews = posts.reduce((s, p) => s + (p.view_count ?? 0), 0);
+
+          const StatCard = ({
+            icon, label, value, sub, color,
+          }: {
+            icon: string; label: string; value: number | string;
+            sub?: string; color?: string;
+          }) => (
+            <div className="bg-surface border border-outline-variant rounded-xl p-5 flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[13px] font-medium text-on-surface-variant">{label}</span>
+                <span
+                  className="material-symbols-outlined text-[22px]"
+                  style={{ color: color ?? "var(--color-primary)" }}
+                >
+                  {icon}
+                </span>
+              </div>
+              <div>
+                <span
+                  className="text-[32px] font-bold text-on-surface leading-none"
+                  style={{ fontFamily: "JetBrains Mono, monospace" }}
+                >
+                  {value}
+                </span>
+                {sub && (
+                  <p className="text-[11px] text-on-surface-variant mt-1">{sub}</p>
+                )}
+              </div>
+            </div>
+          );
+
+          return (
+            <>
+              <header className="h-16 border-b border-outline-variant bg-surface flex items-center px-6 shrink-0">
+                <h1 className="text-[24px] font-semibold leading-[1.3] tracking-[-0.01em] text-on-surface">
+                  Dashboard
+                </h1>
+              </header>
+
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+
+                {/* Ana istatistikler */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <StatCard icon="article"    label="Toplam Yazı"       value={postCount}            sub={`${published} yayında · ${draft} taslak`} />
+                  <StatCard icon="visibility" label="Toplam Görüntülenme" value={totalViews.toLocaleString("tr-TR")} sub="Tüm yazılar toplamı" color="#00d4ff" />
+                  <StatCard icon="work"       label="Projeler"          value={projectCount}          color="#7c3aed" />
+                  <StatCard icon="timeline"   label="Kariyer Kaydı"     value={careerEntries.length}  color="#10b981" />
+                </div>
+
+                {/* Yazı durum dağılımı */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="bg-surface border border-outline-variant rounded-xl p-4 flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-[#10b981]/10 flex items-center justify-center shrink-0">
+                      <span className="material-symbols-outlined text-[20px] text-[#10b981]">check_circle</span>
+                    </div>
+                    <div>
+                      <p className="text-[24px] font-bold text-on-surface leading-none" style={{ fontFamily: "JetBrains Mono, monospace" }}>{published}</p>
+                      <p className="text-[12px] text-on-surface-variant mt-0.5">Yayında</p>
+                    </div>
+                  </div>
+                  <div className="bg-surface border border-outline-variant rounded-xl p-4 flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-[#f59e0b]/10 flex items-center justify-center shrink-0">
+                      <span className="material-symbols-outlined text-[20px] text-[#f59e0b]">edit_note</span>
+                    </div>
+                    <div>
+                      <p className="text-[24px] font-bold text-on-surface leading-none" style={{ fontFamily: "JetBrains Mono, monospace" }}>{draft}</p>
+                      <p className="text-[12px] text-on-surface-variant mt-0.5">Taslak</p>
+                    </div>
+                  </div>
+                  <div className="bg-surface border border-outline-variant rounded-xl p-4 flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center shrink-0">
+                      <span className="material-symbols-outlined text-[20px] text-outline">inventory_2</span>
+                    </div>
+                    <div>
+                      <p className="text-[24px] font-bold text-on-surface leading-none" style={{ fontFamily: "JetBrains Mono, monospace" }}>{archived}</p>
+                      <p className="text-[12px] text-on-surface-variant mt-0.5">Arşivde</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* En çok okunan yazılar — yatay bar grafik */}
+                {posts.length > 0 && (() => {
+                  const topPosts = [...posts]
+                    .sort((a, b) => b.view_count - a.view_count)
+                    .slice(0, 8);
+                  const maxViews = topPosts[0]?.view_count ?? 0;
+
+                  return (
+                    <div className="bg-surface border border-outline-variant rounded-xl overflow-hidden">
+                      <div className="flex items-center justify-between px-5 py-3 border-b border-outline-variant">
+                        <h2 className="text-[14px] font-semibold text-on-surface">En Çok Okunan Yazılar</h2>
+                        <span
+                          className="text-[11px] text-on-surface-variant"
+                          style={{ fontFamily: "JetBrains Mono, monospace" }}
+                        >
+                          view_count
+                        </span>
+                      </div>
+                      <div className="p-5 space-y-3">
+                        {maxViews === 0 ? (
+                          <p className="text-center text-[13px] text-on-surface-variant py-4">
+                            Henüz görüntülenme verisi yok.
+                          </p>
+                        ) : (
+                          topPosts.map((p, i) => {
+                            const pct = (p.view_count / maxViews) * 100;
+                            return (
+                              <div key={p.id} className="flex items-center gap-3">
+                                <span
+                                  className="text-[11px] text-outline w-4 shrink-0 text-right"
+                                  style={{ fontFamily: "JetBrains Mono, monospace" }}
+                                >
+                                  {i + 1}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between mb-1.5">
+                                    <span className="text-[13px] text-on-surface font-medium truncate pr-3">
+                                      {p.title}
+                                    </span>
+                                    <span
+                                      className="text-[12px] text-primary shrink-0"
+                                      style={{ fontFamily: "JetBrains Mono, monospace" }}
+                                    >
+                                      {p.view_count.toLocaleString("tr-TR")}
+                                    </span>
+                                  </div>
+                                  <div className="h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                                    <div
+                                      className="h-full rounded-full"
+                                      style={{
+                                        width: `${pct}%`,
+                                        background: "linear-gradient(90deg, var(--color-primary), #00d4ff)",
+                                        transition: "width 0.8s cubic-bezier(0.16, 1, 0.3, 1)",
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Son yazılar */}
+                {posts.length > 0 && (
+                  <div className="bg-surface border border-outline-variant rounded-xl overflow-hidden">
+                    <div className="flex items-center justify-between px-5 py-3 border-b border-outline-variant">
+                      <h2 className="text-[14px] font-semibold text-on-surface">Son Yazılar</h2>
+                      <button
+                        onClick={() => setSection("posts")}
+                        className="text-[12px] text-primary hover:opacity-80 transition-opacity"
+                      >
+                        Tümünü gör →
+                      </button>
+                    </div>
+                    <div className="divide-y divide-outline-variant/40">
+                      {posts.slice(0, 6).map((p) => {
+                        const s = POST_STATUS[p.status];
+                        return (
+                          <div key={p.id} className="flex items-center gap-3 px-5 py-3 hover:bg-surface-container-low transition-colors">
+                            <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium shrink-0 ${s.cls}`}
+                              style={{ fontFamily: "JetBrains Mono, monospace" }}>
+                              {s.label}
+                            </span>
+                            <span className="flex-1 text-[13px] text-on-surface font-medium truncate">{p.title}</span>
+                            <span className="text-[11px] text-outline shrink-0 flex items-center gap-1"
+                              style={{ fontFamily: "JetBrains Mono, monospace" }}>
+                              <span className="material-symbols-outlined text-[13px]">visibility</span>
+                              {p.view_count.toLocaleString("tr-TR")}
+                            </span>
+                            <span className="text-[11px] text-outline shrink-0"
+                              style={{ fontFamily: "JetBrains Mono, monospace" }}>
+                              {new Date(p.created_at).toLocaleDateString("tr-TR")}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            </>
+          );
+        })()}
 
         {/* ═══ YAZI LİSTESİ ═══ */}
         {section === "posts" && postTab === "list" && (
@@ -205,6 +426,7 @@ export default function AdminDashboard() {
                         <th className="text-left px-6 py-3 text-[11px] font-semibold tracking-[0.05em] text-on-surface-variant uppercase" style={{ fontFamily: "JetBrains Mono, monospace" }}>Başlık</th>
                         <th className="text-left px-4 py-3 text-[11px] font-semibold tracking-[0.05em] text-on-surface-variant uppercase" style={{ fontFamily: "JetBrains Mono, monospace" }}>Durum</th>
                         <th className="text-left px-4 py-3 text-[11px] font-semibold tracking-[0.05em] text-on-surface-variant uppercase" style={{ fontFamily: "JetBrains Mono, monospace" }}>Okuma</th>
+                        <th className="text-left px-4 py-3 text-[11px] font-semibold tracking-[0.05em] text-on-surface-variant uppercase" style={{ fontFamily: "JetBrains Mono, monospace" }}>Görüntülenme</th>
                         <th className="text-left px-4 py-3 text-[11px] font-semibold tracking-[0.05em] text-on-surface-variant uppercase" style={{ fontFamily: "JetBrains Mono, monospace" }}>Tarih</th>
                         <th className="px-4 py-3" />
                       </tr>
@@ -237,6 +459,15 @@ export default function AdminDashboard() {
                               style={{ fontFamily: "JetBrains Mono, monospace" }}
                             >
                               {post.reading_time} dk
+                            </td>
+                            <td className="px-4 py-4">
+                              <span
+                                className="inline-flex items-center gap-1 text-[12px] text-on-surface-variant"
+                                style={{ fontFamily: "JetBrains Mono, monospace" }}
+                              >
+                                <span className="material-symbols-outlined text-[13px]">visibility</span>
+                                {post.view_count.toLocaleString("tr-TR")}
+                              </span>
                             </td>
                             <td
                               className="px-4 py-4 text-on-surface-variant"
@@ -299,96 +530,81 @@ export default function AdminDashboard() {
             </header>
 
             <div className="flex-1 overflow-y-auto p-6">
-              <div className="bg-surface border border-outline-variant rounded-lg overflow-hidden">
-                {projectsLoading ? (
-                  <div className="p-12 text-center text-on-surface-variant text-[14px]">Yükleniyor...</div>
-                ) : projects.length === 0 ? (
-                  <div className="p-12 text-center text-on-surface-variant text-[14px]">
-                    Henüz proje yok.{" "}
-                    <button onClick={handleNewProject} className="text-primary hover:underline">
-                      İlk projeyi oluştur →
-                    </button>
-                  </div>
-                ) : (
-                  <table className="w-full text-[14px]">
-                    <thead className="bg-surface-container-low border-b border-outline-variant">
-                      <tr>
-                        <th className="text-left px-6 py-3 text-[11px] font-semibold tracking-[0.05em] text-on-surface-variant uppercase" style={{ fontFamily: "JetBrains Mono, monospace" }}>Proje</th>
-                        <th className="text-left px-4 py-3 text-[11px] font-semibold tracking-[0.05em] text-on-surface-variant uppercase" style={{ fontFamily: "JetBrains Mono, monospace" }}>Durum</th>
-                        <th className="text-left px-4 py-3 text-[11px] font-semibold tracking-[0.05em] text-on-surface-variant uppercase" style={{ fontFamily: "JetBrains Mono, monospace" }}>Teknolojiler</th>
-                        <th className="text-center px-4 py-3 text-[11px] font-semibold tracking-[0.05em] text-on-surface-variant uppercase" style={{ fontFamily: "JetBrains Mono, monospace" }}>Sıra</th>
-                        <th className="text-center px-4 py-3 text-[11px] font-semibold tracking-[0.05em] text-on-surface-variant uppercase" style={{ fontFamily: "JetBrains Mono, monospace" }}>★</th>
-                        <th className="px-4 py-3" />
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-outline-variant/40">
-                      {projects.map((proj, idx) => {
-                        const s = PROJECT_STATUS[proj.status];
-                        return (
-                          <tr key={proj.id} className="hover:bg-surface-container-low transition-colors duration-150">
-                            <td className="px-6 py-4">
-                              <div className="font-medium text-on-surface">{proj.title}</div>
-                              <div className="text-on-surface-variant text-[12px] mt-0.5 line-clamp-1">{proj.description}</div>
-                            </td>
-                            <td className="px-4 py-4">
-                              <button
-                                onClick={() => handleProjStatusToggle(proj)}
-                                title="Tıkla: Durumu değiştir"
-                                className={`text-[12px] px-2.5 py-1 rounded-full font-medium ${s.cls} hover:opacity-80 transition-opacity`}
-                              >
+              {projectsLoading ? (
+                <div className="text-on-surface-variant text-[14px]">Yükleniyor...</div>
+              ) : projects.length === 0 ? (
+                <div className="text-center py-16 text-on-surface-variant text-[14px]">
+                  Henüz proje yok.{" "}
+                  <button onClick={handleNewProject} className="text-primary hover:underline">
+                    İlk projeyi oluştur →
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <p className="text-[12px] text-on-surface-variant mb-3 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[14px]">drag_indicator</span>
+                    Sıralamak için satırı sürükle
+                  </p>
+                  <SortableList
+                    items={projects}
+                    onReorder={handleProjectReorder}
+                    renderItem={(proj, dragHandleProps) => {
+                      const s = PROJECT_STATUS[proj.status];
+                      return (
+                        <div className="bg-surface border border-outline-variant rounded-xl flex items-center gap-3 px-4 py-3 hover:border-primary/30 transition-colors group">
+                          {/* Sürükleme tutacağı */}
+                          <span
+                            {...dragHandleProps}
+                            className="material-symbols-outlined text-[20px] text-outline cursor-grab active:cursor-grabbing hover:text-on-surface-variant transition-colors shrink-0 touch-none"
+                          >
+                            drag_indicator
+                          </span>
+
+                          {/* Proje bilgisi */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-semibold text-[14px] text-on-surface">{proj.title}</span>
+                              {proj.is_featured && (
+                                <span className="text-[11px] text-yellow-500">★</span>
+                              )}
+                              <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${s.cls}`}
+                                style={{ fontFamily: "JetBrains Mono, monospace" }}>
                                 {s.label}
-                              </button>
-                            </td>
-                            <td className="px-4 py-4">
-                              <div className="flex flex-wrap gap-1">
-                                {proj.tech_stack.slice(0, 3).map((t) => (
-                                  <span key={t} className="text-[11px] bg-surface-container text-on-surface-variant px-1.5 py-0.5 rounded border border-outline-variant">
-                                    {t}
-                                  </span>
-                                ))}
-                                {proj.tech_stack.length > 3 && (
-                                  <span className="text-[11px] text-on-surface-variant">+{proj.tech_stack.length - 3}</span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-4 py-4 text-center">
-                              <div className="flex items-center justify-center gap-1">
-                                <button
-                                  onClick={() => handleProjectMove(idx, "up")}
-                                  disabled={idx === 0}
-                                  className="text-on-surface-variant hover:text-on-surface disabled:opacity-20 disabled:cursor-not-allowed text-[13px] leading-none transition-colors"
-                                >▲</button>
-                                <span
-                                  className="text-[12px] text-on-surface-variant w-5 text-center"
-                                  style={{ fontFamily: "JetBrains Mono, monospace" }}
-                                >
-                                  {proj.sort_order}
+                              </span>
+                            </div>
+                            <div className="flex gap-1 mt-1.5 flex-wrap">
+                              {proj.tech_stack.slice(0, 4).map((t) => (
+                                <span key={t} className="text-[11px] bg-surface-container text-on-surface-variant px-1.5 py-0.5 rounded border border-outline-variant"
+                                  style={{ fontFamily: "JetBrains Mono, monospace" }}>
+                                  {t}
                                 </span>
-                                <button
-                                  onClick={() => handleProjectMove(idx, "down")}
-                                  disabled={idx === projects.length - 1}
-                                  className="text-on-surface-variant hover:text-on-surface disabled:opacity-20 disabled:cursor-not-allowed text-[13px] leading-none transition-colors"
-                                >▼</button>
-                              </div>
-                            </td>
-                            <td className="px-4 py-4 text-center">
-                              {proj.is_featured
-                                ? <span className="text-yellow-500">★</span>
-                                : <span className="text-outline">☆</span>}
-                            </td>
-                            <td className="px-4 py-4">
-                              <div className="flex gap-4 justify-end">
-                                <ActionBtn onClick={() => handleProjEdit(proj)}>Düzenle</ActionBtn>
-                                <ActionBtn onClick={() => handleProjDelete(proj)} danger>Arşivle</ActionBtn>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                )}
-              </div>
+                              ))}
+                              {proj.tech_stack.length > 4 && (
+                                <span className="text-[11px] text-on-surface-variant">+{proj.tech_stack.length - 4}</span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Aksiyon butonları */}
+                          <div className="flex items-center gap-4 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <ActionBtn onClick={() => handleProjStatusToggle(proj)}>
+                              {proj.status === "ACTIVE" ? "Arşivle" : "Yayınla"}
+                            </ActionBtn>
+                            <ActionBtn onClick={() => handleProjEdit(proj)}>Düzenle</ActionBtn>
+                            <ActionBtn onClick={() => handleProjDelete(proj)} danger>Sil</ActionBtn>
+                          </div>
+                        </div>
+                      );
+                    }}
+                    renderOverlay={(proj) => (
+                      <div className="bg-surface border-2 border-primary/50 rounded-xl flex items-center gap-3 px-4 py-3 shadow-2xl">
+                        <span className="material-symbols-outlined text-[20px] text-primary shrink-0">drag_indicator</span>
+                        <span className="font-semibold text-[14px] text-on-surface">{proj.title}</span>
+                      </div>
+                    )}
+                  />
+                </>
+              )}
             </div>
           </>
         )}
@@ -416,6 +632,131 @@ export default function AdminDashboard() {
               />
             </div>
           </div>
+        )}
+
+        {/* ═══ KARİYER LİSTESİ ═══ */}
+        {section === "career" && careerTab === "list" && (
+          <>
+            <header className="h-16 border-b border-outline-variant bg-surface flex items-center justify-between px-6 shrink-0">
+              <h1 className="text-[24px] font-semibold leading-[1.3] tracking-[-0.01em] text-on-surface">
+                Kariyer
+                <span className="ml-2 text-[12px] font-medium text-on-surface-variant align-middle"
+                  style={{ fontFamily: "JetBrains Mono, monospace" }}>
+                  ({careerEntries.length})
+                </span>
+              </h1>
+              <button
+                onClick={handleNewCareer}
+                className="flex items-center gap-2 bg-primary text-on-primary text-[13px] font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
+              >
+                <span className="material-symbols-outlined text-[16px]">add</span>
+                Yeni Kayıt
+              </button>
+            </header>
+            <div className="flex-1 overflow-y-auto p-6">
+              {careerLoading ? (
+                <div className="text-on-surface-variant text-[14px]">Yükleniyor...</div>
+              ) : careerEntries.length === 0 ? (
+                <div className="text-center py-16 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-[48px] block mb-3 opacity-30">timeline</span>
+                  Henüz kariyer kaydı yok.
+                </div>
+              ) : (
+                <div className="space-y-3 max-w-3xl">
+                  {careerEntries.map((entry) => {
+                    const typeColor =
+                      entry.entry_type === "WORK"      ? "#00d4ff" :
+                      entry.entry_type === "EDUCATION" ? "#7c3aed" : "#10b981";
+                    return (
+                      <div
+                        key={entry.id}
+                        className="bg-surface border border-outline-variant rounded-xl p-4 flex items-start justify-between gap-4 hover:border-primary/30 transition-colors"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <span
+                              className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                              style={{
+                                backgroundColor: `${typeColor}15`,
+                                color: typeColor,
+                                fontFamily: "JetBrains Mono, monospace",
+                              }}
+                            >
+                              {TYPE_LABEL[entry.entry_type]}
+                            </span>
+                            {entry.is_current && (
+                              <span
+                                className="text-[11px] bg-tertiary/10 text-tertiary px-2 py-0.5 rounded-full font-medium"
+                                style={{ fontFamily: "JetBrains Mono, monospace" }}
+                              >
+                                Devam Ediyor
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[15px] font-semibold text-on-surface">{entry.position}</p>
+                          <p className="text-[13px] text-primary">{entry.company}</p>
+                          {entry.location && (
+                            <p className="text-[12px] text-on-surface-variant mt-0.5">{entry.location}</p>
+                          )}
+                          <p
+                            className="text-[11px] text-outline mt-1"
+                            style={{ fontFamily: "JetBrains Mono, monospace" }}
+                          >
+                            {entry.start_date} — {entry.is_current ? "devam ediyor" : (entry.end_date ?? "?")}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <ActionBtn onClick={() => handleCareerEdit(entry)}>Düzenle</ActionBtn>
+                          <ActionBtn onClick={() => handleCareerDelete(entry)} danger>Sil</ActionBtn>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* ═══ KARİYER FORM ═══ */}
+        {section === "career" && (careerTab === "new" || careerTab === "edit") && (
+          <div className="flex flex-col h-full">
+            <header className="h-16 border-b border-outline-variant bg-surface flex items-center justify-between px-6 shrink-0">
+              <h1 className="text-[24px] font-semibold leading-[1.3] tracking-[-0.01em] text-on-surface">
+                {careerTab === "edit" ? "Kaydı Düzenle" : "Yeni Kariyer Kaydı"}
+              </h1>
+              <button
+                onClick={handleCloseCareer}
+                className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-colors text-on-surface-variant"
+              >
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </header>
+            <div className="flex-1 overflow-y-auto">
+              <CareerForm
+                entry={editingCareer}
+                onSaved={handleCareerSaved}
+                onCancel={handleCloseCareer}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* ═══ MEDYA KÜTÜPHANESİ ═══ */}
+        {section === "media" && <MediaLibrary />}
+
+        {/* ═══ SİTE AYARLARI ═══ */}
+        {section === "settings" && (
+          <>
+            <header className="h-16 border-b border-outline-variant bg-surface/80 backdrop-blur-md flex items-center px-6 shrink-0">
+              <h1 className="text-[24px] font-semibold leading-[1.3] tracking-[-0.01em] text-on-surface">
+                Site Ayarları
+              </h1>
+            </header>
+            <div className="flex-1 overflow-y-auto">
+              <SiteSettingsForm />
+            </div>
+          </>
         )}
 
         {/* Hiçbir şey yokken (mantıksal olarak ulaşılmaz ama güvenlik için) */}

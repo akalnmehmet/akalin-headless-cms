@@ -31,6 +31,44 @@ services:
     volumes:
       - media_files:/app/media
 
+  celery_worker:
+    build: ./backend
+    restart: unless-stopped
+    command: celery -A celery_app worker --loglevel=info --concurrency=2
+    env_file: .env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - media_files:/app/media
+
+  celery_beat:
+    build: ./backend
+    restart: unless-stopped
+    command: celery -A celery_app beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    env_file: .env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+    depends_on:
+      - db
+      - redis
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Üretimde backend'in public URL'i buraya girilmeli (örn: https://api.example.com)
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
 volumes:
   postgres_data:
   media_files:
+
+
