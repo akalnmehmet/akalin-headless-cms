@@ -49,6 +49,7 @@ describe("axiosInstance — request interceptor", () => {
     const config = { headers: {} as Record<string, string> };
 
     // request interceptor'ı çalıştır
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const requestInterceptor = (api.interceptors.request as any).handlers[0].fulfilled;
     const result = await requestInterceptor(config);
 
@@ -66,6 +67,7 @@ describe("axiosInstance — request interceptor", () => {
     });
 
     const config = { headers: {} as Record<string, string> };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const requestInterceptor = (api.interceptors.request as any).handlers[0].fulfilled;
     const result = await requestInterceptor(config);
 
@@ -86,6 +88,7 @@ describe("axiosInstance — response interceptor (401 refresh akışı)", () => 
       isAuthenticated: vi.fn(() => false),
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const responseInterceptor = (api.interceptors.response as any).handlers[0].rejected;
     const error = {
       response: { status: 401 },
@@ -97,6 +100,7 @@ describe("axiosInstance — response interceptor (401 refresh akışı)", () => 
   });
 
   it("401 değilse isteği olduğu gibi reddeder", async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const responseInterceptor = (api.interceptors.response as any).handlers[0].rejected;
     const error = {
       response: { status: 403 },

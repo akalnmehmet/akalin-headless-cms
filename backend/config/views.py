@@ -1,5 +1,4 @@
 import html
-import textwrap
 from datetime import datetime, timezone
 
 from django.conf import settings
