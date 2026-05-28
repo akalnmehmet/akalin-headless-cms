@@ -34,6 +34,7 @@ CLOUDINARY_CLOUD_NAME = config("CLOUDINARY_CLOUD_NAME", default="")
 
 if CLOUDINARY_CLOUD_NAME:
     # Cloudinary Depolama Ayarları
+    INSTALLED_APPS += ["cloudinary_storage", "cloudinary"]
     DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
     CLOUDINARY_STORAGE = {
         "CLOUD_NAME": CLOUDINARY_CLOUD_NAME,
