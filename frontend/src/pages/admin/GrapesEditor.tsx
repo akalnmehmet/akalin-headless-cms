@@ -91,8 +91,14 @@ export default function GrapesEditor({ post, onSaved, onClose }: Props) {
       setSelectedCategories((prev) => [...prev, res.data.id]);
       setNewCatInput("");
       setShowNewCat(false);
-    } catch {
-      setError("Kategori oluşturulamadı. Yetki kontrolü yapın veya aynı isimde kategori zaten mevcut olabilir.");
+    } catch (err: unknown) {
+      const detail =
+        (err as { response?: { data?: { name?: string[]; detail?: string } } })
+          ?.response?.data?.name?.[0] ??
+        (err as { response?: { data?: { detail?: string } } })
+          ?.response?.data?.detail ??
+        "Kategori oluşturulamadı.";
+      setError(`Kategori hatası: ${detail}`);
     } finally {
       setAddingCat(false);
     }
@@ -108,8 +114,14 @@ export default function GrapesEditor({ post, onSaved, onClose }: Props) {
       setSelectedTags((prev) => [...prev, res.data.id]);
       setNewTagInput("");
       setShowNewTag(false);
-    } catch {
-      setError("Etiket oluşturulamadı. Yetki kontrolü yapın veya aynı isimde etiket zaten mevcut olabilir.");
+    } catch (err: unknown) {
+      const detail =
+        (err as { response?: { data?: { name?: string[]; detail?: string } } })
+          ?.response?.data?.name?.[0] ??
+        (err as { response?: { data?: { detail?: string } } })
+          ?.response?.data?.detail ??
+        "Etiket oluşturulamadı.";
+      setError(`Etiket hatası: ${detail}`);
     } finally {
       setAddingTag(false);
     }

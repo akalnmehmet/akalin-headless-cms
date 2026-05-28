@@ -8,6 +8,8 @@ from .models import BlogPost, Category, Tag
 
 class CategorySerializer(TranslatedSerializerMixin, serializers.ModelSerializer):
     post_count = serializers.SerializerMethodField()
+    # slug model.save() tarafından otomatik üretilir; POST'ta gönderilmesi zorunlu değil
+    slug = serializers.SlugField(required=False, allow_blank=True, allow_unicode=True)
 
     class Meta:
         model = Category
@@ -19,6 +21,9 @@ class CategorySerializer(TranslatedSerializerMixin, serializers.ModelSerializer)
 
 
 class TagSerializer(TranslatedSerializerMixin, serializers.ModelSerializer):
+    # slug model.save() tarafından otomatik üretilir; POST'ta gönderilmesi zorunlu değil
+    slug = serializers.SlugField(required=False, allow_blank=True, allow_unicode=True)
+
     class Meta:
         model = Tag
         fields = ["id", "name", "slug", "color"]
