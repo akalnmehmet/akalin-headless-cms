@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from "react";
 
 import api from "../../api/axiosInstance";
-import { getSiteSettings, updateSiteSettings } from "../../api/settings";
+import { getAdminSiteSettings, updateSiteSettings } from "../../api/settings";
 import MediaPickerModal from "../../components/MediaPickerModal";
 import type { Media, SiteSettings } from "../../types";
 
@@ -29,7 +29,7 @@ export default function SiteSettingsForm() {
   const [imagePreview, setImagePreview] = useState<Media | null>(null);
 
   useEffect(() => {
-    getSiteSettings()
+    getAdminSiteSettings()
       .then((data) => {
         setForm(data);
         setSkillInput(data.skills.join(", "));
