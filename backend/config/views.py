@@ -72,6 +72,7 @@ class ContactView(APIView):
 class SitemapView(APIView):
     """
     /sitemap.xml — Statik sayfalar + yayınlanmış blog yazıları + aktif projeler.
+    Her dil için hreflang alternate linkleriyle birlikte.
     15 dakikalık cache ile hızlandırılmıştır.
     """
 
@@ -79,11 +80,18 @@ class SitemapView(APIView):
     CACHE_KEY = "sitemap_xml"
     CACHE_TIMEOUT = 900  # 15 dakika
 
+    LANGS = ["tr", "en"]
+
+    # (yol, priority, changefreq)  — her dil için /tr/yol ve /en/yol üretilir
     STATIC_PAGES = [
-        ("", "1.0", "daily"),
-        ("blog", "0.9", "daily"),
-        ("projects", "0.8", "weekly"),
-        ("career", "0.7", "monthly"),
+        ("",           "1.0", "daily"),
+        ("blog",       "0.9", "daily"),
+        ("projects",   "0.8", "weekly"),
+        ("career",     "0.7", "monthly"),
+        ("hakkimda",   "0.6", "monthly"),   # TR: /tr/hakkimda
+        ("about",      "0.6", "monthly"),   # EN: /en/about
+        ("iletisim",   "0.5", "monthly"),   # TR: /tr/iletisim
+        ("contact",    "0.5", "monthly"),   # EN: /en/contact
     ]
 
     def get(self, request):
@@ -96,46 +104,82 @@ class SitemapView(APIView):
 
         urls: list[str] = []
 
-        # Statik sayfalar
-        for path, priority, changefreq in self.STATIC_PAGES:
-            loc = f"{site_url}/{path}" if path else site_url
-            urls.append(self._url(loc, now, changefreq, priority))
+        # ── Statik sayfalar (her dil için) ──────────────────────────────
+        # Ana sayfa özel: / → /tr ve /en
+        tr_home = f"{site_url}/tr"
+        en_home = f"{site_url}/en"
+        urls.append(self._url_with_alternates(tr_home, now, "daily", "1.0", tr_home, en_home))
+        urls.append(self._url_with_alternates(en_home, now, "daily", "1.0", tr_home, en_home))
 
-        # Blog yazıları
+        # Diğer statik sayfalar
+        bilingual = {
+            "blog":     ("blog",     "blog"),
+            "projects": ("projects", "projects"),
+            "career":   ("career",   "career"),
+            "about":    ("hakkimda", "about"),
+            "contact":  ("iletisim", "contact"),
+        }
+        priorities = {
+            "blog": ("0.9", "daily"),
+            "projects": ("0.8", "weekly"),
+            "career": ("0.7", "monthly"),
+            "about": ("0.6", "monthly"),
+            "contact": ("0.5", "monthly"),
+        }
+        for key, (tr_path, en_path) in bilingual.items():
+            priority, changefreq = priorities[key]
+            tr_loc = f"{site_url}/tr/{tr_path}"
+            en_loc = f"{site_url}/en/{en_path}"
+            urls.append(self._url_with_alternates(tr_loc, now, changefreq, priority, tr_loc, en_loc))
+            urls.append(self._url_with_alternates(en_loc, now, changefreq, priority, tr_loc, en_loc))
+
+        # ── Blog yazıları ────────────────────────────────────────────────
         posts = BlogPost.objects.filter(
             status=BlogPost.Status.PUBLISHED
         ).values("slug", "updated_at").order_by("-updated_at")
 
         for post in posts:
-            loc = f"{site_url}/blog/{post['slug']}"
+            tr_loc = f"{site_url}/tr/blog/{post['slug']}"
+            en_loc = f"{site_url}/en/blog/{post['slug']}"
             lastmod = post["updated_at"].strftime("%Y-%m-%d")
-            urls.append(self._url(loc, lastmod, "weekly", "0.8"))
+            urls.append(self._url_with_alternates(tr_loc, lastmod, "weekly", "0.8", tr_loc, en_loc))
+            urls.append(self._url_with_alternates(en_loc, lastmod, "weekly", "0.8", tr_loc, en_loc))
 
-        # Projeler
+        # ── Projeler ─────────────────────────────────────────────────────
         projects = Project.objects.exclude(
             status=Project.Status.ARCHIVED
         ).values("slug").order_by("sort_order")
 
         for project in projects:
-            loc = f"{site_url}/projects/{project['slug']}"
-            urls.append(self._url(loc, now, "monthly", "0.6"))
+            tr_loc = f"{site_url}/tr/projects/{project['slug']}"
+            en_loc = f"{site_url}/en/projects/{project['slug']}"
+            urls.append(self._url_with_alternates(tr_loc, now, "monthly", "0.6", tr_loc, en_loc))
+            urls.append(self._url_with_alternates(en_loc, now, "monthly", "0.6", tr_loc, en_loc))
 
-        xml = textwrap.dedent(f"""\
-            <?xml version="1.0" encoding="UTF-8"?>
-            <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-            {"".join(urls)}
-            </urlset>""")
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"\n'
+            '        xmlns:xhtml="http://www.w3.org/1999/xhtml">\n'
+            + "".join(urls)
+            + "</urlset>"
+        )
 
         cache.set(self.CACHE_KEY, xml, self.CACHE_TIMEOUT)
         return HttpResponse(xml, content_type="application/xml; charset=utf-8")
 
     @staticmethod
-    def _url(loc: str, lastmod: str, changefreq: str, priority: str) -> str:
-        return textwrap.dedent(f"""\
-              <url>
-                <loc>{loc}</loc>
-                <lastmod>{lastmod}</lastmod>
-                <changefreq>{changefreq}</changefreq>
-                <priority>{priority}</priority>
-              </url>
-            """)
+    def _url_with_alternates(
+        loc: str, lastmod: str, changefreq: str, priority: str,
+        tr_loc: str, en_loc: str,
+    ) -> str:
+        return (
+            f"  <url>\n"
+            f"    <loc>{loc}</loc>\n"
+            f"    <lastmod>{lastmod}</lastmod>\n"
+            f"    <changefreq>{changefreq}</changefreq>\n"
+            f"    <priority>{priority}</priority>\n"
+            f'    <xhtml:link rel="alternate" hreflang="tr" href="{tr_loc}"/>\n'
+            f'    <xhtml:link rel="alternate" hreflang="en" href="{en_loc}"/>\n'
+            f'    <xhtml:link rel="alternate" hreflang="x-default" href="{tr_loc}"/>\n'
+            f"  </url>\n"
+        )
