@@ -61,15 +61,21 @@ export default function GrapesEditor({ post, onSaved, onClose }: Props) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>(post?.categories ?? []);
   const [selectedTags,       setSelectedTags]       = useState<string[]>(post?.tags       ?? []);
 
-  const [allCategories, setAllCategories] = useState<Category[]>([]);
-  const [allTags,       setAllTags]       = useState<Tag[]>([]);
+  const [allCategories,   setAllCategories]   = useState<Category[]>([]);
+  const [allTags,         setAllTags]         = useState<Tag[]>([]);
+  const [loadingMeta,     setLoadingMeta]     = useState(true);
   const [saving,  setSaving]  = useState(false);
   const [error,   setError]   = useState<string | null>(null);
 
   /* ── Kategori & etiket yükle ── */
   useEffect(() => {
-    api.get<PaginatedResponse<Category>>("/api/categories/").then((r) => setAllCategories(r.data.results));
-    api.get<PaginatedResponse<Tag>>("/api/tags/").then((r) => setAllTags(r.data.results));
+    Promise.all([
+      api.get<PaginatedResponse<Category>>("/api/categories/"),
+      api.get<PaginatedResponse<Tag>>("/api/tags/"),
+    ]).then(([catRes, tagRes]) => {
+      setAllCategories(catRes.data.results);
+      setAllTags(tagRes.data.results);
+    }).finally(() => setLoadingMeta(false));
   }, []);
 
   /* ── GrapesJS ── */
@@ -584,8 +590,10 @@ const kullanici: Kullanici = {
                 >
                   Kategoriler
                 </label>
-                {allCategories.length === 0 ? (
+                {loadingMeta ? (
                   <p className="text-[13px] text-on-surface-variant">Yükleniyor...</p>
+                ) : allCategories.length === 0 ? (
+                  <p className="text-[13px] text-on-surface-variant">Henüz kategori yok</p>
                 ) : (
                   <div className="flex flex-col gap-2 max-h-32 overflow-y-auto pr-1">
                     {allCategories.map((cat) => (
@@ -614,8 +622,10 @@ const kullanici: Kullanici = {
                 >
                   Etiketler
                 </label>
-                {allTags.length === 0 ? (
+                {loadingMeta ? (
                   <p className="text-[13px] text-on-surface-variant">Yükleniyor...</p>
+                ) : allTags.length === 0 ? (
+                  <p className="text-[13px] text-on-surface-variant">Henüz etiket yok</p>
                 ) : (
                   <div className="flex flex-wrap gap-2">
                     {allTags.map((tag) => {
