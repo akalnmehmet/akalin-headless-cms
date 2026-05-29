@@ -458,6 +458,24 @@ export default function SiteSettingsForm() {
         )}
       </div>
 
+      {/* İletişim E-postası */}
+      <div>
+        <label className={labelCls} style={{ fontFamily: "JetBrains Mono, monospace" }}>
+          İletişim E-postası
+          <span className="text-on-surface-variant/50 normal-case font-normal ml-1">
+            (Hakkımda sayfasında mailto: linki olarak gösterilir)
+          </span>
+        </label>
+        <input
+          className={inputCls}
+          type="email"
+          value={form.contact_email ?? ""}
+          onChange={(e) => set("contact_email", e.target.value)}
+          placeholder="ornek@gmail.com"
+          disabled={saving}
+        />
+      </div>
+
       {/* Sosyal linkler */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>

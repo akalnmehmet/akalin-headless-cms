@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
 
 import { getCareer } from "../../api/career";
 import { getSiteSettings } from "../../api/settings";
@@ -151,14 +150,16 @@ export default function AboutPage() {
                   LinkedIn
                 </a>
               )}
-              <Link
-                to="/iletisim"
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-primary/40 bg-primary/08 text-[12px] text-primary hover:bg-primary/15 transition-colors duration-150"
-                style={{ fontFamily: "JetBrains Mono, monospace" }}
-              >
-                <span className="material-symbols-outlined text-[15px]">mail</span>
-                {t("nav.contact")}
-              </Link>
+              {settings?.contact_email && (
+                <a
+                  href={`mailto:${settings.contact_email}`}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-primary/40 bg-primary/08 text-[12px] text-primary hover:bg-primary/15 transition-colors duration-150"
+                  style={{ fontFamily: "JetBrains Mono, monospace" }}
+                >
+                  <span className="material-symbols-outlined text-[15px]">mail</span>
+                  {settings.contact_email}
+                </a>
+              )}
             </div>
           </div>
         </header>

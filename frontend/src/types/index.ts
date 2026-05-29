@@ -118,6 +118,7 @@ export interface SiteSettings {
   github_url: string;
   linkedin_url: string;
   cv_url: string;
+  contact_email?: string;
 }
 
 export interface PaginatedResponse<T> {

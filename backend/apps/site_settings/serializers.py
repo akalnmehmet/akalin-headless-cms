@@ -24,6 +24,7 @@ class SiteSettingsSerializer(TranslatedSerializerMixin, serializers.ModelSeriali
             "github_url",
             "linkedin_url",
             "cv_url",
+            "contact_email",
         ]
         translatable_fields = ["owner_title", "owner_bio", "about_bio", "status_text"]
 
@@ -51,4 +52,5 @@ class SiteSettingsAdminSerializer(serializers.ModelSerializer):
             "github_url",
             "linkedin_url",
             "cv_url",
+            "contact_email",
         ]

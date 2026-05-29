@@ -42,9 +42,10 @@ class SiteSettings(models.Model):
         default=list,
         help_text='JSON liste: ["Python", "Django", ...]',
     )
-    github_url   = models.URLField(blank=True, default="")
-    linkedin_url = models.URLField(blank=True, default="")
-    cv_url       = models.URLField(blank=True, default="", verbose_name="CV Dosyası URL")
+    github_url    = models.URLField(blank=True, default="")
+    linkedin_url  = models.URLField(blank=True, default="")
+    cv_url        = models.URLField(blank=True, default="", verbose_name="CV Dosyası URL")
+    contact_email = models.EmailField(blank=True, default="", verbose_name="İletişim E-postası")
 
     class Meta:
         verbose_name        = "Site Ayarları"
