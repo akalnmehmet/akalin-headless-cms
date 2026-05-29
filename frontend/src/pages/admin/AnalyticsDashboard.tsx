@@ -1,10 +1,175 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 // @ts-expect-error react-simple-maps has no bundled types for this version
-import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from "react-simple-maps";
+import { ComposableMap, Geographies, Geography, ZoomableGroup } from "react-simple-maps";
 
 import { getAnalyticsStats, type AnalyticsStats } from "../../api/analytics";
 
-const GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
+// Türkiye iller GeoJSON (cihadturhan/tr-geojson)
+const TURKEY_GEO = "https://cdn.jsdelivr.net/gh/cihadturhan/tr-geojson@master/geo/tr-cities-utf8.json";
+
+/** Türkçe karakterleri ASCII'ye düşürüp küçük harf yapar — GeoIP city ismiyle GeoJSON eşleştirmek için */
+function normTR(s: string): string {
+  return (s || "")
+    .replace(/İ/g, "i").replace(/ı/g, "i")
+    .replace(/Ş/g, "s").replace(/ş/g, "s")
+    .replace(/Ğ/g, "g").replace(/ğ/g, "g")
+    .replace(/Ç/g, "c").replace(/ç/g, "c")
+    .replace(/Ö/g, "o").replace(/ö/g, "o")
+    .replace(/Ü/g, "u").replace(/ü/g, "u")
+    .toLowerCase()
+    .trim();
+}
+
+/** İl görüntüleme sayısına göre renk üret (koyu → cyan) */
+function ilRenk(count: number, max: number): string {
+  if (count === 0) return "#1a2035";
+  const t = Math.pow(count / max, 0.4); // sqrt-ish — düşük değerleri öne çıkar
+  return `rgba(0,212,255,${(0.18 + t * 0.82).toFixed(2)})`;
+}
+
+interface HoverInfo { name: string; count: number; x: number; y: number }
+
+// ── Türkiye İl Haritası ────────────────────────────────────────────────────────
+function TurkeyProvinceMap({ locations }: { locations: AnalyticsStats["locations"] }) {
+  const [hover, setHover] = useState<HoverInfo | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const trLocs    = locations.filter((l) => l.country_code === "TR");
+  const otherLocs = locations.filter((l) => l.country_code !== "TR");
+
+  // İl adı (normalize) → toplam ziyaret
+  const ilMap = new Map<string, number>();
+  for (const loc of trLocs) {
+    const k = normTR(loc.city);
+    if (k) ilMap.set(k, (ilMap.get(k) || 0) + loc.count);
+  }
+
+  const maxCount  = Math.max(...Array.from(ilMap.values()), 1);
+  const totalTR   = trLocs.reduce((s, l) => s + l.count, 0);
+  const totalDiger = otherLocs.reduce((s, l) => s + l.count, 0);
+
+  const topIller = Array.from(ilMap.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 7);
+
+  const handleEnter = (name: string, count: number) =>
+    (e: React.MouseEvent<SVGPathElement>) => {
+      if (!containerRef.current) return;
+      const r = containerRef.current.getBoundingClientRect();
+      setHover({ name, count, x: e.clientX - r.left, y: e.clientY - r.top });
+    };
+
+  const handleMove = (name: string, count: number) =>
+    (e: React.MouseEvent<SVGPathElement>) => {
+      if (!containerRef.current) return;
+      const r = containerRef.current.getBoundingClientRect();
+      setHover({ name, count, x: e.clientX - r.left, y: e.clientY - r.top });
+    };
+
+  return (
+    <div ref={containerRef} className="relative" style={{ height: 380 }}>
+      <ComposableMap
+        projection="geoMercator"
+        projectionConfig={{ scale: 2300, center: [35.2, 39.1] }}
+        style={{ width: "100%", height: "100%" }}
+      >
+        <ZoomableGroup zoom={1} minZoom={1} maxZoom={10}>
+          <Geographies geography={TURKEY_GEO}>
+            {({ geographies }: { geographies: unknown[] }) =>
+              (geographies as Record<string, unknown>[]).map((geo) => {
+                const props = geo.properties as Record<string, string> | undefined;
+                const name  = props?.name || props?.NAME || "";
+                const count = ilMap.get(normTR(name)) || 0;
+                const fill  = ilRenk(count, maxCount);
+                const key   = geo.rsmKey as string;
+                return (
+                  <Geography
+                    key={key}
+                    geography={geo}
+                    fill={fill}
+                    stroke="#0a0d14"
+                    strokeWidth={0.5}
+                    onMouseEnter={handleEnter(name, count)}
+                    onMouseMove={handleMove(name, count)}
+                    onMouseLeave={() => setHover(null)}
+                    style={{
+                      default: { outline: "none" },
+                      hover:   { fill: "#00d4ff", fillOpacity: 0.95, outline: "none", cursor: "pointer" },
+                      pressed: { outline: "none" },
+                    }}
+                  />
+                );
+              })
+            }
+          </Geographies>
+        </ZoomableGroup>
+      </ComposableMap>
+
+      {/* Tooltip */}
+      {hover && (
+        <div
+          className="absolute z-20 pointer-events-none bg-surface border border-outline-variant rounded-lg px-3 py-1.5 shadow-xl text-[12px] whitespace-nowrap"
+          style={{
+            left: Math.min(hover.x + 14, (containerRef.current?.offsetWidth ?? 600) - 200),
+            top:  Math.max(hover.y - 44, 6),
+          }}
+        >
+          <span className="font-semibold text-on-surface">{hover.name || "—"}</span>
+          {hover.count > 0
+            ? <span className="text-primary font-mono ml-2">{hover.count} ziyaret</span>
+            : <span className="text-on-surface-variant ml-2 font-mono">0 ziyaret</span>
+          }
+        </div>
+      )}
+
+      {/* Renk skalası */}
+      <div className="absolute top-3 right-3 flex items-center gap-2 text-[10px] text-on-surface-variant bg-surface/80 rounded px-2 py-1 border border-outline-variant/50">
+        <span className="font-mono">Az</span>
+        <div className="w-16 h-2 rounded-full" style={{
+          background: "linear-gradient(to right,rgba(0,212,255,.18),rgba(0,212,255,1))"
+        }} />
+        <span className="font-mono">Çok</span>
+      </div>
+
+      {/* Top iller */}
+      <div className="absolute bottom-3 left-3 bg-surface/90 backdrop-blur-sm border border-outline-variant rounded-lg px-3 py-2 text-[11px] space-y-1">
+        <div className="flex items-center justify-between gap-4 mb-1.5 font-mono text-on-surface-variant">
+          <span className="flex items-center gap-1">🇹🇷 Türkiye</span>
+          <span className="text-primary font-semibold">{totalTR} ziyaret</span>
+        </div>
+        {topIller.map(([il, cnt]) => (
+          <div key={il} className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#00d4ff] shrink-0" />
+            <span className="text-on-surface-variant font-mono capitalize"
+              style={{ minWidth: 72 }}>{il}</span>
+            <span className="text-primary font-mono ml-auto">{cnt}</span>
+          </div>
+        ))}
+        {topIller.length === 0 && (
+          <span className="text-on-surface-variant font-mono">Henüz veri yok</span>
+        )}
+      </div>
+
+      {/* Yurt dışı özet */}
+      {totalDiger > 0 && (
+        <div className="absolute bottom-3 right-3 bg-surface/90 backdrop-blur-sm border border-outline-variant rounded-lg px-3 py-2 text-[11px] max-w-[180px]">
+          <div className="text-on-surface-variant font-mono mb-1">Yurt dışı: <span className="text-primary">{totalDiger}</span></div>
+          {otherLocs.slice(0, 4).map((loc) => (
+            <div key={`${loc.country_code}:${loc.city}`} className="flex items-center gap-1.5 text-[10px]">
+              <span>
+                {loc.country_code.toUpperCase().replace(/./g, (c) =>
+                  String.fromCodePoint(c.codePointAt(0)! + 127397)
+                )}
+              </span>
+              <span className="text-on-surface-variant font-mono truncate">{loc.country_name}</span>
+              <span className="text-primary font-mono ml-auto">{loc.count}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const DEVICE_ICON: Record<string, string> = {
   desktop: "computer",
@@ -280,76 +445,19 @@ export default function AnalyticsDashboard() {
           ))}
         </div>
 
-        {/* ── Dünya haritası ── */}
+        {/* ── Türkiye İl Haritası ── */}
         <div className="bg-surface border border-outline-variant rounded-xl overflow-hidden">
           <div className="px-5 py-3 border-b border-outline-variant flex items-center justify-between">
             <h2 className="text-[14px] font-semibold text-on-surface flex items-center gap-2">
-              <span className="material-symbols-outlined text-[18px] text-primary">travel_explore</span>
-              Ziyaretçi Konumları
+              <span className="material-symbols-outlined text-[18px] text-primary">map</span>
+              Türkiye Ziyaretçi Haritası
             </h2>
             <span className="text-[12px] text-on-surface-variant font-mono">
-              {stats.locations.length} konum · {new Set(stats.locations.map((l) => l.country_code)).size} ülke
+              {new Set(stats.locations.filter((l) => l.country_code === "TR").map((l) => normTR(l.city))).size} il · scroll ile zoom
             </span>
           </div>
-          <div className="bg-[#080b11] relative" style={{ height: 340 }}>
-            <ComposableMap
-              projectionConfig={{ scale: 140, center: [20, 10] }}
-              style={{ width: "100%", height: "100%" }}
-            >
-              <ZoomableGroup>
-                <Geographies geography={GEO_URL}>
-                  {({ geographies }: { geographies: unknown[] }) =>
-                    geographies.map((geo: unknown) => {
-                      const g = geo as { rsmKey: string };
-                      return (
-                        <Geography
-                          key={g.rsmKey}
-                          geography={geo}
-                          fill="#1a2035"
-                          stroke="#0d1120"
-                          strokeWidth={0.3}
-                          style={{
-                            default:  { outline: "none" },
-                            hover:    { fill: "#243350", outline: "none" },
-                            pressed:  { outline: "none" },
-                          }}
-                        />
-                      );
-                    })
-                  }
-                </Geographies>
-                {stats.locations
-                  .filter((loc) => loc.lat != null && loc.lng != null)
-                  .map((loc, i) => {
-                    const r = Math.max(3, Math.min(18, Math.sqrt(loc.count) * 2.5));
-                    return (
-                      <Marker key={i} coordinates={[loc.lng!, loc.lat!]}>
-                        <circle
-                          r={r}
-                          fill="#00d4ff"
-                          fillOpacity={0.5}
-                          stroke="#00d4ff"
-                          strokeWidth={0.8}
-                          strokeOpacity={0.9}
-                        />
-                        <circle r={2} fill="#00d4ff" fillOpacity={1} />
-                      </Marker>
-                    );
-                  })}
-              </ZoomableGroup>
-            </ComposableMap>
-
-            {/* Legend */}
-            <div className="absolute bottom-3 right-3 bg-surface/90 border border-outline-variant rounded-lg px-3 py-2 text-[11px] text-on-surface-variant space-y-1">
-              {stats.locations.slice(0, 5).map((loc) => (
-                <div key={`${loc.country_code}:${loc.city}`} className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#00d4ff] shrink-0" style={{ opacity: 0.7 }} />
-                  <span style={{ fontFamily: "JetBrains Mono, monospace" }}>
-                    {loc.country_name}{loc.city ? `, ${loc.city}` : ""} — {loc.count}
-                  </span>
-                </div>
-              ))}
-            </div>
+          <div className="bg-[#080b11]">
+            <TurkeyProvinceMap locations={stats.locations} />
           </div>
         </div>
 
