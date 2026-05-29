@@ -5,10 +5,12 @@ import { logout } from "../../api/auth";
 import { deleteCareerEntry, getCareer } from "../../api/career";
 import { deletePost, getAdminPosts, patchPost } from "../../api/posts";
 import { deleteProject, getAdminProjects, patchProject, reorderProjects } from "../../api/projects";
+import { approveComment, deleteComment, getAdminComments, rejectComment } from "../../api/comments";
 import AdminSideNav from "../../components/AdminSideNav";
 import SortableList from "../../components/SortableList";
 import { useAuthStore } from "../../store/authStore";
 import type { BlogPostAdmin, CareerEntry, Project } from "../../types";
+import type { AdminComment } from "../../api/comments";
 import AnalyticsDashboard from "./AnalyticsDashboard";
 import CareerForm from "./CareerForm";
 import MediaLibrary from "./MediaLibrary";
@@ -17,7 +19,7 @@ import SiteSettingsForm from "./SiteSettingsForm";
 
 const GrapesEditor = lazy(() => import("./GrapesEditor"));
 
-type Section  = "dashboard" | "posts" | "projects" | "career" | "media" | "settings" | "analytics";
+type Section  = "dashboard" | "posts" | "projects" | "career" | "media" | "settings" | "analytics" | "comments";
 type PostTab  = "list" | "new" | "edit";
 type ProjTab  = "list" | "new" | "edit";
 type CareerTab = "list" | "new" | "edit";
@@ -72,6 +74,10 @@ export default function AdminDashboard() {
   const [projectsLoading, setProjectsLoading] = useState(true);
   const [careerEntries,   setCareerEntries]   = useState<CareerEntry[]>([]);
   const [careerLoading,   setCareerLoading]   = useState(true);
+  const [comments,        setComments]        = useState<AdminComment[]>([]);
+  const [commentCount,    setCommentCount]    = useState(0);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [commentFilter,   setCommentFilter]   = useState<"pending" | "approved" | "all">("pending");
 
   /* ── Veri yükleme ── */
   const loadPosts = useCallback(() => {
@@ -95,12 +101,24 @@ export default function AdminDashboard() {
       .finally(() => setCareerLoading(false));
   }, []);
 
+  const loadComments = useCallback((filter: "pending" | "approved" | "all") => {
+    setCommentsLoading(true);
+    const params: Record<string, string> = {};
+    if (filter === "pending")  params.is_approved = "false";
+    if (filter === "approved") params.is_approved = "true";
+    getAdminComments(params)
+      .then((d) => { setComments(d.results); setCommentCount(d.count); })
+      .finally(() => setCommentsLoading(false));
+  }, []);
+
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadPosts(); },    [loadPosts]);
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadProjects(); }, [loadProjects]);
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadCareer(); },   [loadCareer]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { if (section === "comments") loadComments(commentFilter); }, [section, commentFilter, loadComments]);
 
   /* ── Post aksiyonları ── */
   const handlePostStatusToggle = async (p: BlogPostAdmin) => {
@@ -748,6 +766,118 @@ export default function AdminDashboard() {
 
         {/* ═══ ANALİTİK ═══ */}
         {section === "analytics" && <AnalyticsDashboard />}
+
+        {/* ═══ YORUMLAR ═══ */}
+        {section === "comments" && (
+          <>
+            <header className="h-16 border-b border-outline-variant bg-surface flex items-center px-6 gap-4 shrink-0">
+              <h1 className="text-[24px] font-semibold leading-[1.3] tracking-[-0.01em] text-on-surface">
+                Yorumlar
+              </h1>
+              {commentCount > 0 && (
+                <span className="text-[12px] font-mono text-on-surface-variant">
+                  {commentCount} kayıt
+                </span>
+              )}
+              {/* Filtre */}
+              <div className="ml-auto flex gap-1">
+                {(["pending", "approved", "all"] as const).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setCommentFilter(f)}
+                    className={`px-3 py-1 rounded-full text-[12px] font-mono border transition-colors ${
+                      commentFilter === f
+                        ? "bg-primary/10 text-primary border-primary/30"
+                        : "text-on-surface-variant border-outline-variant hover:bg-surface-container"
+                    }`}
+                  >
+                    {f === "pending" ? "Bekleyen" : f === "approved" ? "Onaylı" : "Tümü"}
+                  </button>
+                ))}
+              </div>
+            </header>
+
+            <div className="flex-1 overflow-y-auto p-6">
+              {commentsLoading ? (
+                <div className="space-y-3">
+                  {[1,2,3].map((i) => (
+                    <div key={i} className="h-16 bg-surface-variant rounded-xl animate-pulse" />
+                  ))}
+                </div>
+              ) : comments.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-[48px] mb-3 opacity-30">chat_bubble</span>
+                  <p className="text-[14px]">
+                    {commentFilter === "pending" ? "Bekleyen yorum yok." : "Yorum bulunamadı."}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {comments.map((c) => (
+                    <div
+                      key={c.id}
+                      className="bg-surface border border-outline-variant rounded-xl p-4 flex flex-col sm:flex-row sm:items-start gap-4"
+                    >
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[13px] font-semibold text-on-surface">{c.name}</span>
+                          <span className="text-[11px] text-outline font-mono">{c.email}</span>
+                          {c.parent && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant font-mono">
+                              yanıt
+                            </span>
+                          )}
+                          <span
+                            className={`text-[10px] px-1.5 py-0.5 rounded border font-mono ml-auto ${
+                              c.is_approved
+                                ? "bg-[#10b981]/10 text-[#10b981] border-[#10b981]/20"
+                                : "bg-[#f59e0b]/10 text-[#f59e0b] border-[#f59e0b]/20"
+                            }`}
+                          >
+                            {c.is_approved ? "Onaylı" : "Bekliyor"}
+                          </span>
+                        </div>
+                        <p className="text-[12px] text-outline font-mono">
+                          {c.post_title} · {new Date(c.created_at).toLocaleString("tr-TR")}
+                        </p>
+                        <p className="text-[13px] text-on-surface-variant leading-relaxed whitespace-pre-wrap break-words">
+                          {c.body}
+                        </p>
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        {!c.is_approved && (
+                          <button
+                            onClick={() => approveComment(c.id).then(() => loadComments(commentFilter))}
+                            className="text-[12px] text-[#10b981] hover:opacity-80 font-medium transition-opacity"
+                          >
+                            Onayla
+                          </button>
+                        )}
+                        {c.is_approved && (
+                          <button
+                            onClick={() => rejectComment(c.id).then(() => loadComments(commentFilter))}
+                            className="text-[12px] text-[#f59e0b] hover:opacity-80 font-medium transition-opacity"
+                          >
+                            Geri Al
+                          </button>
+                        )}
+                        <button
+                          onClick={() => {
+                            if (!confirm("Bu yorum silinsin mi?")) return;
+                            deleteComment(c.id).then(() => loadComments(commentFilter));
+                          }}
+                          className="text-[12px] text-error hover:opacity-80 font-medium transition-opacity"
+                        >
+                          Sil
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
 
         {/* ═══ SİTE AYARLARI ═══ */}
         {section === "settings" && (

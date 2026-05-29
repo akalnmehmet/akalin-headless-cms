@@ -6,6 +6,10 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 
 import { getPostBySlug, getPostBySlugPreview, getRelatedPosts, incrementViewCount } from "../../api/posts";
 import TableOfContents from "../../components/TableOfContents";
+import SeriesNavigator from "../../components/SeriesNavigator";
+import ReactionBar from "../../components/ReactionBar";
+import ShareButtons from "../../components/ShareButtons";
+import CommentSection from "../../components/CommentSection";
 import { extractHeadingsAndAddIds } from "../../utils/tocUtils";
 import type { TocItem } from "../../utils/tocUtils";
 import { useDocumentMeta } from "../../hooks/useDocumentMeta";
@@ -397,11 +401,25 @@ export default function BlogPostPage() {
               <TableOfContents items={headings} variant="mobile" />
             </div>
 
+            {/* Seri navigatörü — makaleden önce */}
+            {post.series_info && slug && (
+              <SeriesNavigator info={post.series_info} currentSlug={slug} />
+            )}
+
             {/* Makale gövdesi */}
             <article
               ref={articleRef}
               className="prose max-w-none text-on-surface"
             />
+
+            {/* Tepki + paylaş */}
+            <div className="mt-10 pt-8 border-t border-outline-variant space-y-1">
+              {slug && <ReactionBar slug={slug} />}
+              <ShareButtons url={window.location.href} title={post.title} />
+            </div>
+
+            {/* Yorumlar */}
+            {slug && <CommentSection slug={slug} />}
 
             {/* İlgili yazılar */}
             {related.length > 0 && (

@@ -28,6 +28,58 @@ export interface Tag {
   color: string;
 }
 
+export interface Series {
+  id: string;
+  title: string;
+  title_en?: string | null;
+  slug: string;
+  description: string;
+  description_en?: string | null;
+  post_count: number;
+  created_at: string;
+}
+
+export interface SeriesPostStub {
+  id: string;
+  title: string;
+  slug: string;
+  series_order: number | null;
+  reading_time: number;
+}
+
+export interface SeriesInfo {
+  id: string;
+  title: string;
+  title_en?: string | null;
+  slug: string;
+  posts: SeriesPostStub[];
+  current_order: number | null;
+}
+
+export interface ReactionCounts {
+  like: number;
+  heart: number;
+  fire: number;
+  thinking: number;
+  clap: number;
+}
+
+export interface Comment {
+  id: string;
+  name: string;
+  body: string;
+  created_at: string;
+  parent: string | null;
+  replies: CommentReply[];
+}
+
+export interface CommentReply {
+  id: string;
+  name: string;
+  body: string;
+  created_at: string;
+}
+
 export interface BlogPostList {
   id: string;
   title: string;
@@ -42,6 +94,8 @@ export interface BlogPostList {
   reading_time: number;
   view_count: number;
   created_at: string;
+  series_title?: string | null;
+  series_slug?: string | null;
 }
 
 export interface BlogPostDetail extends BlogPostList {
@@ -50,6 +104,9 @@ export interface BlogPostDetail extends BlogPostList {
   meta_title: string;
   meta_description: string;
   updated_at: string;
+  series_info?: SeriesInfo | null;
+  reaction_counts?: ReactionCounts;
+  comment_count?: number;
 }
 
 export interface BlogPostAdmin {

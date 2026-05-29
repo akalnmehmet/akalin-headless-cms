@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 
 import { useThemeStore } from "../store/themeStore";
 
-type Section = "dashboard" | "posts" | "projects" | "career" | "media" | "settings" | "analytics";
+type Section = "dashboard" | "posts" | "projects" | "career" | "media" | "settings" | "analytics" | "comments";
 
 interface Props {
   section: Section;
@@ -17,6 +17,7 @@ const NAV_ITEMS: { key: Section; icon: string; label: string }[] = [
   { key: "career",    icon: "timeline",         label: "Kariyer"       },
   { key: "media",     icon: "perm_media",       label: "Medya"         },
   { key: "analytics", icon: "bar_chart",        label: "Analitik"      },
+  { key: "comments",  icon: "chat_bubble",      label: "Yorumlar"      },
   { key: "settings",  icon: "tune",             label: "Site Ayarları" },
 ];
 
