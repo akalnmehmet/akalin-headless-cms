@@ -4,10 +4,12 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { getSiteSettings } from "../api/settings";
 import { SUPPORTED_LANGS, type SupportedLang } from "../i18n";
+import { usePageTracking } from "../hooks/usePageTracking";
 import { useThemeStore } from "../store/themeStore";
 import type { SiteSettings } from "../types";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
+  usePageTracking();
   const { t, i18n } = useTranslation();
   const { lang = "tr" } = useParams<{ lang: string }>();
   const { pathname } = useLocation();

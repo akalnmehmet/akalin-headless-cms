@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     "apps.site_settings",
     "apps.career",
     "apps.newsletter",
+    "apps.analytics",
 ]
 
 MIDDLEWARE = [

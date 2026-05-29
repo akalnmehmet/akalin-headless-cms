@@ -9,6 +9,7 @@ import AdminSideNav from "../../components/AdminSideNav";
 import SortableList from "../../components/SortableList";
 import { useAuthStore } from "../../store/authStore";
 import type { BlogPostAdmin, CareerEntry, Project } from "../../types";
+import AnalyticsDashboard from "./AnalyticsDashboard";
 import CareerForm from "./CareerForm";
 import MediaLibrary from "./MediaLibrary";
 import ProjectForm from "./ProjectForm";
@@ -16,7 +17,7 @@ import SiteSettingsForm from "./SiteSettingsForm";
 
 const GrapesEditor = lazy(() => import("./GrapesEditor"));
 
-type Section  = "dashboard" | "posts" | "projects" | "career" | "media" | "settings";
+type Section  = "dashboard" | "posts" | "projects" | "career" | "media" | "settings" | "analytics";
 type PostTab  = "list" | "new" | "edit";
 type ProjTab  = "list" | "new" | "edit";
 type CareerTab = "list" | "new" | "edit";
@@ -744,6 +745,9 @@ export default function AdminDashboard() {
 
         {/* ═══ MEDYA KÜTÜPHANESİ ═══ */}
         {section === "media" && <MediaLibrary />}
+
+        {/* ═══ ANALİTİK ═══ */}
+        {section === "analytics" && <AnalyticsDashboard />}
 
         {/* ═══ SİTE AYARLARI ═══ */}
         {section === "settings" && (
