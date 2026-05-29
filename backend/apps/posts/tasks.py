@@ -27,11 +27,14 @@ def publish_scheduled_posts(self):
 
     try:
         now = timezone.now()
-        updated_count = BlogPost.objects.filter(
+        # Yayınlanacak post'ları önce çek (newsletter için pk'lara ihtiyacımız var)
+        to_publish_qs = BlogPost.objects.filter(
             status=BlogPost.Status.DRAFT,
             publish_at__isnull=False,
             publish_at__lte=now,
-        ).update(status=BlogPost.Status.PUBLISHED)
+        )
+        to_publish_pks = list(to_publish_qs.values_list("pk", flat=True))
+        updated_count = to_publish_qs.update(status=BlogPost.Status.PUBLISHED)
 
         if updated_count > 0:
             logger.info(
@@ -39,6 +42,19 @@ def publish_scheduled_posts(self):
                 updated_count,
                 now.isoformat(),
             )
+            # Bulk update signals tetiklemez — newsletter'ı burada elle gönder
+            try:
+                from apps.newsletter.email import send_newsletter
+
+                newly_published = BlogPost.objects.filter(
+                    pk__in=to_publish_pks,
+                    newsletter_sent=False,
+                )
+                for post in newly_published:
+                    send_newsletter(post)
+                    BlogPost.objects.filter(pk=post.pk).update(newsletter_sent=True)
+            except Exception as nl_exc:
+                logger.error("Zamanlanmış newsletter gönderilemedi: %s", nl_exc, exc_info=True)
         else:
             logger.debug(
                 "Zamanlanmış yayın kontrolü tamamlandı: Yayınlanacak yazı yok. (Zaman: %s)",

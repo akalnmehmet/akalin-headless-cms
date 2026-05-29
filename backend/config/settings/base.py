@@ -12,6 +12,7 @@ DEBUG = config("DEBUG", default=False, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1").split(",")
 
 FRONTEND_URL = config("FRONTEND_URL", default="http://localhost:5173")
+BACKEND_URL  = config("BACKEND_URL",  default="http://localhost:8000")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -34,6 +35,7 @@ INSTALLED_APPS = [
     "apps.media",
     "apps.site_settings",
     "apps.career",
+    "apps.newsletter",
 ]
 
 MIDDLEWARE = [

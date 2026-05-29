@@ -83,6 +83,11 @@ class BlogPost(models.Model):
     )
     reading_time = models.PositiveIntegerField(default=0)
     view_count = models.PositiveIntegerField(default=0)
+    newsletter_sent = models.BooleanField(
+        default=False,
+        verbose_name="Newsletter Gönderildi",
+        help_text="Bu yazı için abonelere e-posta gönderildi mi?",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

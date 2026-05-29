@@ -4,6 +4,7 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 
 import api from "../../api/axiosInstance";
 import { getPosts } from "../../api/posts";
+import NewsletterWidget from "../../components/NewsletterWidget";
 import { useDocumentMeta } from "../../hooks/useDocumentMeta";
 import type { BlogPostList, Category, PaginatedResponse, Tag } from "../../types";
 
@@ -365,6 +366,11 @@ export default function BlogListPage() {
           )}
         </>
       )}
+
+      {/* Newsletter abonelik formu */}
+      <div className="mt-16 border-t border-outline-variant pt-12">
+        <NewsletterWidget />
+      </div>
     </div>
   );
 }
