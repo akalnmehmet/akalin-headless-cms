@@ -1,9 +1,7 @@
 import pytest
 import pyotp
 from django.contrib.auth import get_user_model
-from django.core.cache import cache
 from rest_framework.test import APIClient
-from apps.totp.models import UserTOTP
 
 User = get_user_model()
 
