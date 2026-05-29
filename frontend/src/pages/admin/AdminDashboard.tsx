@@ -1349,35 +1349,6 @@ export default function AdminDashboard() {
                 )}
               </div>
 
-              {/* Sentry bilgisi */}
-              <div className="bg-surface border border-outline-variant rounded-xl p-5">
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="material-symbols-outlined text-[20px] text-[#f59e0b]">bug_report</span>
-                  <div>
-                    <h2 className="text-[14px] font-semibold text-on-surface">Hata Takibi (Sentry)</h2>
-                    <p className="text-[12px] text-on-surface-variant">Frontend + Backend otomatik hata yakalama</p>
-                  </div>
-                  <span className={`ml-auto text-[11px] font-mono px-2 py-0.5 rounded-full border ${
-                    import.meta.env.VITE_SENTRY_DSN
-                      ? "bg-[#10b981]/10 text-[#10b981] border-[#10b981]/20"
-                      : "bg-surface-container text-outline border-outline-variant"
-                  }`}>
-                    {import.meta.env.VITE_SENTRY_DSN ? "Aktif" : "Yapılandırılmadı"}
-                  </span>
-                </div>
-                <p className="text-[12px] text-on-surface-variant leading-relaxed">
-                  Sentry'yi etkinleştirmek için Vercel ve Render ortam değişkenlerine ekleyin:
-                </p>
-                <div className="mt-3 space-y-1.5 font-mono text-[11px]">
-                  <div className="px-3 py-2 rounded bg-surface-container border border-outline-variant text-on-surface-variant">
-                    <span className="text-[#f59e0b]">Vercel</span> → VITE_SENTRY_DSN=https://...@sentry.io/...
-                  </div>
-                  <div className="px-3 py-2 rounded bg-surface-container border border-outline-variant text-on-surface-variant">
-                    <span className="text-[#7c3aed]">Render</span> → SENTRY_DSN=https://...@sentry.io/...
-                  </div>
-                </div>
-              </div>
-
               {/* Rate Limiting bilgisi */}
               <div className="bg-surface border border-outline-variant rounded-xl p-5">
                 <div className="flex items-center gap-3 mb-3">

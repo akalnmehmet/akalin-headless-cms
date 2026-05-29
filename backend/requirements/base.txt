@@ -13,5 +13,3 @@ requests==2.32.3
 # 2FA / TOTP
 pyotp==2.9.0
 qrcode==8.0
-# Hata takibi
-sentry-sdk[django]==2.22.0
