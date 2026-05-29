@@ -14,10 +14,12 @@ urlpatterns = [
     path("feed.xml", RssFeedView.as_view(), name="rss-feed"),
     # İletişim formu
     path("api/contact/", ContactView.as_view(), name="contact"),
-    # Auth
+    # Auth — orijinal simplejwt (public API için)
     path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("api/token/blacklist/", TokenBlacklistView.as_view(), name="token_blacklist"),
+    # Auth — 2FA destekli admin login
+    path("api/", include("apps.totp.urls")),
     # Apps
     path("api/", include("apps.posts.urls")),
     path("api/", include("apps.projects.urls")),

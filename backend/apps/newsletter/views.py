@@ -7,9 +7,14 @@ from django.shortcuts import redirect
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 
 from .models import Subscriber
+
+
+class SubscribeRateThrottle(AnonRateThrottle):
+    scope = "newsletter_subscribe"
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +78,7 @@ class SubscribeView(APIView):
     """POST /api/newsletter/subscribe/  { "email": "..." }"""
 
     permission_classes = [AllowAny]
+    throttle_classes = [SubscribeRateThrottle]
 
     def post(self, request):
         email = (request.data.get("email") or "").strip().lower()

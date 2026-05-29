@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { logout } from "../../api/auth";
 import { deleteCareerEntry, getCareer } from "../../api/career";
 import { bulkDeletePosts, bulkPatchPosts, deletePost, getAdminPosts, patchPost } from "../../api/posts";
+import { totpDisable, totpSetupConfirm, totpSetupGet, totpStatus } from "../../api/auth";
 import { deleteProject, getAdminProjects, patchProject, reorderProjects } from "../../api/projects";
 import { approveComment, deleteComment, getAdminComments, rejectComment } from "../../api/comments";
 import { deleteSubscriber, getSubscribers, sendTestEmail } from "../../api/newsletter";
@@ -25,7 +26,7 @@ const GrapesEditor = lazy(() => import("./GrapesEditor"));
 type Section =
   | "dashboard" | "posts" | "projects" | "career"
   | "media" | "settings" | "analytics" | "comments"
-  | "newsletter" | "calendar";
+  | "newsletter" | "calendar" | "security";
 type PostTab  = "list" | "new" | "edit";
 type ProjTab  = "list" | "new" | "edit";
 type CareerTab = "list" | "new" | "edit";
@@ -99,6 +100,15 @@ export default function AdminDashboard() {
   const [selectedPostIds,   setSelectedPostIds]   = useState<Set<string>>(new Set());
   const [bulkWorking,       setBulkWorking]       = useState(false);
 
+  /* ── 2FA / Güvenlik ── */
+  const [totpActive,        setTotpActive]        = useState<boolean | null>(null);
+  const [totpQr,            setTotpQr]            = useState<string>("");
+  const [totpSecret,        setTotpSecret]        = useState<string>("");
+  const [totpSetupCode,     setTotpSetupCode]     = useState("");
+  const [totpDisableCode,   setTotpDisableCode]   = useState("");
+  const [totpMsg,           setTotpMsg]           = useState<{ text: string; ok: boolean } | null>(null);
+  const [totpWorking,       setTotpWorking]       = useState(false);
+
   /* ── Veri yükleme ── */
   const loadPosts = useCallback(() => {
     setPostsLoading(true);
@@ -149,6 +159,55 @@ export default function AdminDashboard() {
   }, []);
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { if (section === "newsletter") loadSubscribers(); }, [section, loadSubscribers]);
+
+  /* ── 2FA durum yükleme ── */
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => {
+    if (section !== "security") return;
+    totpStatus().then((r) => setTotpActive(r.is_active)).catch(() => setTotpActive(false));
+  }, [section]);
+
+  const handleTotpSetupStart = async () => {
+    setTotpWorking(true);
+    setTotpMsg(null);
+    try {
+      const r = await totpSetupGet();
+      if (r.is_active) { setTotpActive(true); return; }
+      setTotpQr(r.qr_image ?? "");
+      setTotpSecret(r.secret ?? "");
+    } catch { setTotpMsg({ text: "QR kodu alınamadı.", ok: false }); }
+    finally { setTotpWorking(false); }
+  };
+
+  const handleTotpActivate = async () => {
+    if (!totpSetupCode.trim()) return;
+    setTotpWorking(true);
+    setTotpMsg(null);
+    try {
+      const r = await totpSetupConfirm(totpSetupCode);
+      setTotpMsg({ text: r.detail, ok: true });
+      setTotpActive(true);
+      setTotpQr(""); setTotpSecret(""); setTotpSetupCode("");
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? "Hata oluştu.";
+      setTotpMsg({ text: msg, ok: false });
+    } finally { setTotpWorking(false); }
+  };
+
+  const handleTotpDisable = async () => {
+    if (!totpDisableCode.trim()) return;
+    setTotpWorking(true);
+    setTotpMsg(null);
+    try {
+      const r = await totpDisable(totpDisableCode);
+      setTotpMsg({ text: r.detail, ok: true });
+      setTotpActive(false);
+      setTotpDisableCode("");
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? "Hata oluştu.";
+      setTotpMsg({ text: msg, ok: false });
+    } finally { setTotpWorking(false); }
+  };
 
   const handleTestEmail = async () => {
     if (!testEmail.trim()) return;
@@ -1166,6 +1225,179 @@ export default function AdminDashboard() {
                     </tbody>
                   </table>
                 )}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ═══ GÜVENLİK / 2FA ═══ */}
+        {section === "security" && (
+          <>
+            <header className="h-16 border-b border-outline-variant bg-surface flex items-center px-6 shrink-0">
+              <h1 className="text-[24px] font-semibold leading-[1.3] tracking-[-0.01em] text-on-surface">
+                Güvenlik
+              </h1>
+            </header>
+
+            <div className="flex-1 overflow-y-auto p-6 max-w-xl space-y-6">
+              {/* 2FA Durumu */}
+              <div className="bg-surface border border-outline-variant rounded-xl p-5">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="material-symbols-outlined text-[20px] text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>
+                    phonelink_lock
+                  </span>
+                  <div>
+                    <h2 className="text-[14px] font-semibold text-on-surface">İki Faktörlü Doğrulama (2FA)</h2>
+                    <p className="text-[12px] text-on-surface-variant">Google Authenticator ile TOTP</p>
+                  </div>
+                  {totpActive !== null && (
+                    <span className={`ml-auto text-[11px] font-mono px-2 py-0.5 rounded-full border ${
+                      totpActive
+                        ? "bg-[#10b981]/10 text-[#10b981] border-[#10b981]/20"
+                        : "bg-surface-container text-outline border-outline-variant"
+                    }`}>
+                      {totpActive ? "Aktif" : "Devre Dışı"}
+                    </span>
+                  )}
+                </div>
+
+                {totpMsg && (
+                  <div className={`mb-4 px-3 py-2 rounded-lg text-[12px] border flex items-center gap-2 ${
+                    totpMsg.ok
+                      ? "bg-[#10b981]/10 text-[#10b981] border-[#10b981]/20"
+                      : "bg-error/10 text-error border-error/20"
+                  }`}>
+                    <span className="material-symbols-outlined text-[14px]">{totpMsg.ok ? "check_circle" : "error"}</span>
+                    {totpMsg.text}
+                  </div>
+                )}
+
+                {/* 2FA Aktif değil */}
+                {totpActive === false && !totpQr && (
+                  <button
+                    onClick={handleTotpSetupStart}
+                    disabled={totpWorking}
+                    className="px-4 py-2 rounded-lg bg-primary text-on-primary text-[13px] font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-[15px]">qr_code_2</span>
+                    2FA Kurulumunu Başlat
+                  </button>
+                )}
+
+                {/* QR kod göster */}
+                {totpQr && (
+                  <div className="space-y-4">
+                    <p className="text-[13px] text-on-surface-variant leading-relaxed">
+                      Google Authenticator uygulamasını açın ve aşağıdaki QR kodu taratın.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-4 items-start">
+                      <img src={totpQr} alt="TOTP QR Kodu" className="w-40 h-40 rounded-lg border border-outline-variant bg-white p-1" />
+                      <div className="space-y-2">
+                        <p className="text-[11px] text-outline font-mono">Manuel giriş için secret:</p>
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-container font-mono text-[12px] text-primary border border-outline-variant break-all">
+                          {totpSecret}
+                        </div>
+                        <p className="text-[11px] text-outline">Tarattıktan sonra 6 haneli kodu girin ve onaylayın.</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={6}
+                        value={totpSetupCode}
+                        onChange={(e) => setTotpSetupCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                        placeholder="000000"
+                        className="w-32 px-3 py-2 text-[14px] text-center font-mono tracking-[0.3em] rounded-lg border border-outline-variant bg-surface-container-low text-on-surface focus:outline-none focus:border-primary/60 transition-colors"
+                      />
+                      <button
+                        onClick={handleTotpActivate}
+                        disabled={totpWorking || totpSetupCode.length !== 6}
+                        className="px-4 py-2 rounded-lg bg-[#10b981] text-white text-[13px] font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                      >
+                        {totpWorking ? "Kontrol ediliyor..." : "Onayla & Etkinleştir"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* 2FA Aktif — devre dışı bırak */}
+                {totpActive === true && (
+                  <div className="space-y-3">
+                    <p className="text-[13px] text-on-surface-variant">
+                      2FA etkin. Devre dışı bırakmak için Authenticator'dan güncel kodu girin.
+                    </p>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={6}
+                        value={totpDisableCode}
+                        onChange={(e) => setTotpDisableCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                        placeholder="000000"
+                        className="w-32 px-3 py-2 text-[14px] text-center font-mono tracking-[0.3em] rounded-lg border border-outline-variant bg-surface-container-low text-on-surface focus:outline-none focus:border-primary/60 transition-colors"
+                      />
+                      <button
+                        onClick={handleTotpDisable}
+                        disabled={totpWorking || totpDisableCode.length !== 6}
+                        className="px-4 py-2 rounded-lg bg-error/10 text-error border border-error/20 text-[13px] font-medium hover:opacity-80 transition-opacity disabled:opacity-50"
+                      >
+                        {totpWorking ? "İşleniyor..." : "2FA'yı Devre Dışı Bırak"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Sentry bilgisi */}
+              <div className="bg-surface border border-outline-variant rounded-xl p-5">
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="material-symbols-outlined text-[20px] text-[#f59e0b]">bug_report</span>
+                  <div>
+                    <h2 className="text-[14px] font-semibold text-on-surface">Hata Takibi (Sentry)</h2>
+                    <p className="text-[12px] text-on-surface-variant">Frontend + Backend otomatik hata yakalama</p>
+                  </div>
+                  <span className={`ml-auto text-[11px] font-mono px-2 py-0.5 rounded-full border ${
+                    import.meta.env.VITE_SENTRY_DSN
+                      ? "bg-[#10b981]/10 text-[#10b981] border-[#10b981]/20"
+                      : "bg-surface-container text-outline border-outline-variant"
+                  }`}>
+                    {import.meta.env.VITE_SENTRY_DSN ? "Aktif" : "Yapılandırılmadı"}
+                  </span>
+                </div>
+                <p className="text-[12px] text-on-surface-variant leading-relaxed">
+                  Sentry'yi etkinleştirmek için Vercel ve Render ortam değişkenlerine ekleyin:
+                </p>
+                <div className="mt-3 space-y-1.5 font-mono text-[11px]">
+                  <div className="px-3 py-2 rounded bg-surface-container border border-outline-variant text-on-surface-variant">
+                    <span className="text-[#f59e0b]">Vercel</span> → VITE_SENTRY_DSN=https://...@sentry.io/...
+                  </div>
+                  <div className="px-3 py-2 rounded bg-surface-container border border-outline-variant text-on-surface-variant">
+                    <span className="text-[#7c3aed]">Render</span> → SENTRY_DSN=https://...@sentry.io/...
+                  </div>
+                </div>
+              </div>
+
+              {/* Rate Limiting bilgisi */}
+              <div className="bg-surface border border-outline-variant rounded-xl p-5">
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="material-symbols-outlined text-[20px] text-primary">speed</span>
+                  <h2 className="text-[14px] font-semibold text-on-surface">Rate Limiting</h2>
+                </div>
+                <div className="space-y-2 text-[12px] font-mono">
+                  {[
+                    { label: "Newsletter abone", limit: "3 istek/saat" },
+                    { label: "Yorum gönderme", limit: "5 istek/saat" },
+                    { label: "İletişim formu", limit: "5 istek/saat" },
+                    { label: "TOTP doğrulama", limit: "10 istek/saat" },
+                    { label: "Genel API (anonim)", limit: "200 istek/dk" },
+                  ].map(({ label, limit }) => (
+                    <div key={label} className="flex items-center justify-between px-3 py-2 rounded bg-surface-container border border-outline-variant">
+                      <span className="text-on-surface-variant">{label}</span>
+                      <span className="text-primary">{limit}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </>

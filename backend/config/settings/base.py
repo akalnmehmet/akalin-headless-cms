@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "apps.career",
     "apps.newsletter",
     "apps.analytics",
+    "apps.totp",
 ]
 
 MIDDLEWARE = [
@@ -115,6 +116,8 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": "200/min",
         "user": "500/min",
+        "totp_verify": "10/hour",
+        "newsletter_subscribe": "3/hour",
     },
 }
 
@@ -172,3 +175,30 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(minute="*/5"),
     },
 }
+
+# ── Sentry ────────────────────────────────────────────────────────────────────
+# SENTRY_DSN env değişkeni tanımlıysa hata takibini etkinleştirir.
+_sentry_dsn = config("SENTRY_DSN", default="")
+if _sentry_dsn:
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+    from sentry_sdk.integrations.logging import LoggingIntegration
+    import logging
+
+    sentry_sdk.init(
+        dsn=_sentry_dsn,
+        integrations=[
+            DjangoIntegration(
+                transaction_style="url",
+                middleware_spans=True,
+                signals_spans=False,
+            ),
+            LoggingIntegration(
+                level=logging.WARNING,
+                event_level=logging.ERROR,
+            ),
+        ],
+        traces_sample_rate=0.1,
+        send_default_pii=False,
+        environment=config("SENTRY_ENVIRONMENT", default="production"),
+    )

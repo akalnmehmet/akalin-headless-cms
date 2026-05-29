@@ -4,7 +4,7 @@ import { useThemeStore } from "../store/themeStore";
 type Section =
   | "dashboard" | "posts" | "projects" | "career"
   | "media" | "analytics" | "comments" | "newsletter"
-  | "calendar" | "settings";
+  | "calendar" | "security" | "settings";
 
 interface Props {
   section: Section;
@@ -25,6 +25,7 @@ const NAV_ITEMS: { key: Section; icon: string; label: string }[] = [
   { key: "analytics",  icon: "bar_chart",        label: "Analitik"      },
   { key: "comments",   icon: "chat_bubble",      label: "Yorumlar"      },
   { key: "newsletter", icon: "mail",             label: "Newsletter"    },
+  { key: "security",   icon: "shield",           label: "Güvenlik"      },
   { key: "settings",   icon: "tune",             label: "Site Ayarları" },
 ];
 
