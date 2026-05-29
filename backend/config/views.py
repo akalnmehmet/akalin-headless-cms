@@ -6,6 +6,7 @@ from django.core.cache import cache
 from django.core.mail import EmailMultiAlternatives
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 from django.http import HttpResponse
 from rest_framework import status
 from rest_framework.permissions import AllowAny
@@ -15,6 +16,60 @@ from rest_framework.views import APIView
 
 from apps.posts.models import BlogPost
 from apps.projects.models import Project
+
+
+class SearchView(APIView):
+    """
+    GET /api/search/?q=<query>
+    Yayınlanmış blog yazıları + aktif projelerde birleşik arama.
+    """
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        q = (request.query_params.get("q") or "").strip()[:100]
+        if len(q) < 2:
+            return Response({"results": []})
+
+        posts = (
+            BlogPost.objects
+            .filter(status=BlogPost.Status.PUBLISHED)
+            .filter(Q(title__icontains=q) | Q(summary__icontains=q))
+            .values("id", "title", "summary", "slug")[:5]
+        )
+
+        projects = (
+            Project.objects
+            .exclude(status=Project.Status.ARCHIVED)
+            .filter(Q(title__icontains=q) | Q(description__icontains=q))
+            .values("id", "title", "slug", "tech_stack")[:5]
+        )
+
+        results = []
+
+        for p in posts:
+            results.append({
+                "type": "post",
+                "id": str(p["id"]),
+                "title": p["title"],
+                "subtitle": (p["summary"] or "")[:80],
+                "slug": p["slug"],
+                "icon": "article",
+            })
+
+        for p in projects:
+            tech = p.get("tech_stack") or []
+            subtitle = " · ".join(tech[:4]) if isinstance(tech, list) else ""
+            results.append({
+                "type": "project",
+                "id": str(p["id"]),
+                "title": p["title"],
+                "subtitle": subtitle,
+                "slug": p["slug"],
+                "icon": "code",
+            })
+
+        return Response({"results": results})
 
 
 class ContactRateThrottle(AnonRateThrottle):

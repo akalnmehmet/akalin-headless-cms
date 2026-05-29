@@ -5,13 +5,15 @@ from django.urls import include, path
 from rest_framework_simplejwt.views import TokenBlacklistView, TokenObtainPairView, TokenRefreshView
 
 from apps.posts.views import RssFeedView
-from config.views import ContactView, SitemapView
+from config.views import ContactView, SearchView, SitemapView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     # Sitemap & RSS
     path("sitemap.xml", SitemapView.as_view(), name="sitemap"),
     path("feed.xml", RssFeedView.as_view(), name="rss-feed"),
+    # Site-wide arama
+    path("api/search/", SearchView.as_view(), name="search"),
     # İletişim formu
     path("api/contact/", ContactView.as_view(), name="contact"),
     # Auth — orijinal simplejwt (public API için)

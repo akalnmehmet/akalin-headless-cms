@@ -38,10 +38,50 @@
     <!-- Canonical -->
     <link rel="canonical" href="https://akalin-cms.vercel.app" />
 
+    <!-- DNS/TLS bağlantısını erkenden kur -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;600;700&display=swap" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet" />
+
+    <!-- Kritik font CSS'ini yüksek öncelikle önceden yükle -->
+    <link rel="preload" as="style"
+          href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700&display=swap" />
+
+    <!-- Tam font yüklemeleri -->
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;600;700&display=swap"
+          rel="stylesheet" fetchpriority="high" />
+    <!-- İkon fontu — render-blocking değil, sonradan yüklenebilir -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+          rel="stylesheet" media="print" onload="this.media='all'" />
+    <noscript>
+      <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet" />
+    </noscript>
+
+    <!-- Critical CSS: FOUC'u önle, ilk boyamayı hızlandır -->
+    <style>
+      *,::before,::after{box-sizing:border-box}
+      html{scroll-behavior:smooth}
+      body{
+        margin:0;
+        background:#0a0d14;
+        color:#e2e8f0;
+        font-family:'Syne',system-ui,sans-serif;
+        -webkit-font-smoothing:antialiased;
+        -moz-osx-font-smoothing:grayscale;
+      }
+      #root{min-height:100vh}
+      /* Navbar placeholder — layout shift'i engelle */
+      body::before{
+        content:'';
+        display:block;
+        height:64px;
+        position:fixed;
+        top:0;left:0;right:0;
+        background:rgba(17,22,34,.8);
+        backdrop-filter:blur(12px);
+        border-bottom:1px solid #1f2d4a;
+        z-index:50;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

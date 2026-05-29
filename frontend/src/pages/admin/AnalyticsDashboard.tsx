@@ -230,7 +230,7 @@ export default function AnalyticsDashboard() {
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
 
         {/* ── Özet kartlar ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           {[
             {
               icon: "visibility",
@@ -255,6 +255,12 @@ export default function AnalyticsDashboard() {
               label: "Günlük Ortalama",
               value: days > 0 ? (stats.total_views / days).toFixed(1) : "0",
               sub: "görüntüleme/gün",
+            },
+            {
+              icon: "download",
+              label: "CV İndirme",
+              value: (stats.cv_downloads ?? 0).toLocaleString("tr-TR"),
+              sub: "toplam indirme",
             },
           ].map((card) => (
             <div

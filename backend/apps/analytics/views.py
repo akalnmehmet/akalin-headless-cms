@@ -191,9 +191,13 @@ class AnalyticsStatsView(APIView):
             for r in recent_qs
         ]
 
+        # ── CV indirme sayısı ──────────────────────────────────────────────────
+        cv_downloads = PageView.objects.filter(path="/cv-download").count()
+
         return Response({
             "period_days":   days,
             "total_views":   total_views,
+            "cv_downloads":  cv_downloads,
             "views_by_day":  views_by_day,
             "views_by_hour": views_by_hour,
             "top_pages":     top_pages,

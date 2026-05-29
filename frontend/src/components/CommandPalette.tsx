@@ -1,17 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
-import api from "../api/axiosInstance";
-import type { BlogPostList, PaginatedResponse, Project } from "../types";
-
-interface SearchResult {
-  type: "post" | "project";
-  id: string;
-  title: string;
-  subtitle?: string;
-  slug: string;
-  icon: string;
-}
+import { searchAll } from "../api/analytics";
+import type { SearchResult } from "../api/analytics";
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -68,30 +59,8 @@ export default function CommandPalette() {
     setLoading(true);
     debounceTimer = setTimeout(async () => {
       try {
-        const [postsRes, projectsRes] = await Promise.all([
-          api.get<PaginatedResponse<BlogPostList>>(`/api/posts/?search=${encodeURIComponent(q)}&page_size=5`),
-          api.get<PaginatedResponse<Project>>(`/api/projects/?search=${encodeURIComponent(q)}&page_size=5`),
-        ]);
-
-        const postResults: SearchResult[] = postsRes.data.results.map((p) => ({
-          type: "post",
-          id: p.id,
-          title: p.title,
-          subtitle: p.summary?.slice(0, 80) || undefined,
-          slug: p.slug,
-          icon: "article",
-        }));
-
-        const projectResults: SearchResult[] = projectsRes.data.results.map((p) => ({
-          type: "project",
-          id: p.id,
-          title: p.title,
-          subtitle: (p.tech_stack as string[]).slice(0, 4).join(" · ") || undefined,
-          slug: p.slug,
-          icon: "code",
-        }));
-
-        setResults([...postResults, ...projectResults]);
+        const results = await searchAll(q);
+        setResults(results);
       } catch {
         setResults([]);
       } finally {

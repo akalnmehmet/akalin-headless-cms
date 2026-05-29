@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { getCareer } from "../../api/career";
 import { getSiteSettings } from "../../api/settings";
+import { trackCvDownload } from "../../api/analytics";
 import { useDocumentMeta } from "../../hooks/useDocumentMeta";
 import { clImg } from "../../utils/cloudinary";
 import type { CareerEntry, SiteSettings } from "../../types";
@@ -73,6 +74,7 @@ export default function AboutPage() {
             target="_blank"
             rel="noopener noreferrer"
             download
+            onClick={trackCvDownload}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-on-primary shadow-lg text-[13px] font-semibold hover:opacity-90 transition-opacity duration-200"
             style={{ fontFamily: "JetBrains Mono, monospace" }}
           >
