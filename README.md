@@ -6,7 +6,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![Vite](https://img.shields.io/badge/Vite-8-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev)
 [![Celery](https://img.shields.io/badge/Celery-5.4-37814A?style=for-the-badge&logo=celery&logoColor=white)](https://docs.celeryq.dev)
-[![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
+[![License](https://img.shields.io/badge/License-AGPL--3.0-blue.svg?style=for-the-badge)](LICENSE)
 
 Django REST Framework (Python) + React 19 (TypeScript) + Tailwind CSS v4 ile geliştirilmiş; Türkçe-İngilizce çoklu dil (i18n) destekli, GrapesJS sürükle-bırak görsel editörü ile güçlendirilmiş, iki katmanlı XSS korumasına sahip, gelişmiş kişisel portfolyo ve içerik yönetim sistemi (CMS).
 
@@ -264,4 +264,4 @@ npm test
 ---
 
 ## 📄 Lisans
-Bu proje **MIT Lisansı** altında lisanslanmıştır. Kodları ticari veya kişisel amaçlarla serbestçe kullanabilir, değiştirebilir ve dağıtabilirsiniz.
+Bu proje **AGPL-3.0 (GNU Affero General Public License)** altında lisanslanmıştır. Kodları ve yapılan tüm değişiklikleri açık kaynaklı olarak paylaşma şartıyla özgürce kullanabilirsiniz. Daha fazla bilgi için `LICENSE` dosyasına göz atabilirsiniz.
