@@ -178,7 +178,8 @@ export default function GrapesEditor({ post, onSaved, onClose }: Props) {
           return;
         }
       }
-      setPendingDraft(draft);
+      // queueMicrotask: setState'i effect body dışına çıkar (set-state-in-effect lint kuralı)
+      queueMicrotask(() => setPendingDraft(draft));
     } catch {
       localStorage.removeItem(draftKey);
     }

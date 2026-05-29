@@ -33,7 +33,7 @@ else:
 CLOUDINARY_CLOUD_NAME = config("CLOUDINARY_CLOUD_NAME", default="")
 
 if CLOUDINARY_CLOUD_NAME:
-    INSTALLED_APPS += ["cloudinary_storage", "cloudinary"]
+    INSTALLED_APPS += ["cloudinary_storage", "cloudinary"]  # noqa: F405
     CLOUDINARY_STORAGE = {
         "CLOUD_NAME": CLOUDINARY_CLOUD_NAME,
         "API_KEY": config("CLOUDINARY_API_KEY", default=""),

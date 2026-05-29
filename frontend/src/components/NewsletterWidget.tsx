@@ -26,16 +26,12 @@ function useNewsletterParam() {
 
 export default function NewsletterWidget() {
   const [email,    setEmail]   = useState("");
-  const [uiState,  setUiState] = useState<UIState>("idle");
+  const param    = useNewsletterParam();
+  const [uiState,  setUiState] = useState<UIState>(
+    param === "confirmed" ? "success" : "idle",
+  );
   const [errorMsg, setErrorMsg] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
-  const param    = useNewsletterParam();
-
-  // URL'den gelen param → anlık bildirim
-  useEffect(() => {
-    if (param === "confirmed")    setUiState("success");
-    else if (param === "unsubscribed") setUiState("idle");  // sessizce sıfırla
-  }, [param]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

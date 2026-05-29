@@ -161,7 +161,6 @@ export default function AdminDashboard() {
   useEffect(() => { if (section === "newsletter") loadSubscribers(); }, [section, loadSubscribers]);
 
   /* ── 2FA durum yükleme ── */
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (section !== "security") return;
     totpStatus().then((r) => setTotpActive(r.is_active)).catch(() => setTotpActive(false));
@@ -227,7 +226,7 @@ export default function AdminDashboard() {
   const toggleSelectPost = (id: string) => {
     setSelectedPostIds((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
   };

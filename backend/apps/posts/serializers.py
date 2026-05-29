@@ -4,7 +4,7 @@ from rest_framework import serializers
 from apps.media.serializers import MediaSerializer
 from apps.utils.serializers import TranslatedSerializerMixin
 
-from .models import BlogPost, Category, Comment, Reaction, Series, Tag
+from .models import BlogPost, Category, Comment, Series, Tag
 
 
 class CategorySerializer(TranslatedSerializerMixin, serializers.ModelSerializer):

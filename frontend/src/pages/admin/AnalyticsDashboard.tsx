@@ -94,11 +94,24 @@ function ProvinceTable({
 
 // ── Türkiye İl Haritası ────────────────────────────────────────────────────────
 function TurkeyProvinceMap({ locations }: { locations: AnalyticsStats["locations"] }) {
-  const [geoData,    setGeoData]    = useState<unknown>(null);
-  const [geoLoading, setGeoLoading] = useState(true);
-  const [geoFailed,  setGeoFailed]  = useState(false);
-  const [hover,      setHover]      = useState<HoverInfo | null>(null);
+  const [geoData,         setGeoData]         = useState<unknown>(null);
+  const [geoLoading,      setGeoLoading]      = useState(true);
+  const [geoFailed,       setGeoFailed]       = useState(false);
+  const [hover,           setHover]           = useState<HoverInfo | null>(null);
+  const [containerWidth,  setContainerWidth]  = useState(600);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Konteyner genişliğini izle (ref'e render sırasında erişim yasak)
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    setContainerWidth(el.offsetWidth);
+    const obs = new ResizeObserver((entries) => {
+      setContainerWidth(entries[0].contentRect.width);
+    });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   // GeoJSON'ı önceden fetch et — birden fazla URL dene
   useEffect(() => {
@@ -206,7 +219,7 @@ function TurkeyProvinceMap({ locations }: { locations: AnalyticsStats["locations
         <div
           className="absolute z-20 pointer-events-none bg-surface border border-outline-variant rounded-lg px-3 py-1.5 shadow-xl text-[12px] whitespace-nowrap"
           style={{
-            left: Math.min(hover.x + 14, (containerRef.current?.offsetWidth ?? 600) - 200),
+            left: Math.min(hover.x + 14, containerWidth - 200),
             top:  Math.max(hover.y - 44, 6),
           }}
         >
@@ -422,7 +435,6 @@ export default function AnalyticsDashboard() {
   }, [days]);
 
   useEffect(() => {
-    setLoading(true);
     load();
     // 30 sn'de bir otomatik yenile
     intervalRef.current = setInterval(load, 30_000);

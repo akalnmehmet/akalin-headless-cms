@@ -9,7 +9,6 @@ from .views import (
     PostPublicViewSet,
     PostReactionView,
     PostViewCountView,
-    RssFeedView,
     SeriesViewSet,
     TagViewSet,
 )
