@@ -4,10 +4,13 @@ import { ComposableMap, Geographies, Geography, ZoomableGroup } from "react-simp
 
 import { getAnalyticsStats, type AnalyticsStats } from "../../api/analytics";
 
-// Türkiye iller GeoJSON (cihadturhan/tr-geojson)
-const TURKEY_GEO = "https://cdn.jsdelivr.net/gh/cihadturhan/tr-geojson@master/geo/tr-cities-utf8.json";
+// Türkiye iller GeoJSON — birden fazla kaynak, sırayla denenir
+const GEO_URLS = [
+  "https://raw.githubusercontent.com/cihadturhan/tr-geojson/master/geo/tr-cities-utf8.json",
+  "https://cdn.jsdelivr.net/gh/cihadturhan/tr-geojson@master/geo/tr-cities-utf8.json",
+];
 
-/** Türkçe karakterleri ASCII'ye düşürüp küçük harf yapar — GeoIP city ismiyle GeoJSON eşleştirmek için */
+/** Türkçe karakterleri ASCII'ye düşürüp küçük harf yapar */
 function normTR(s: string): string {
   return (s || "")
     .replace(/İ/g, "i").replace(/ı/g, "i")
@@ -16,41 +19,135 @@ function normTR(s: string): string {
     .replace(/Ç/g, "c").replace(/ç/g, "c")
     .replace(/Ö/g, "o").replace(/ö/g, "o")
     .replace(/Ü/g, "u").replace(/ü/g, "u")
-    .toLowerCase()
-    .trim();
+    .toLowerCase().trim();
 }
 
-/** İl görüntüleme sayısına göre renk üret (koyu → cyan) */
+/** Ziyaret yoğunluğuna göre renk */
 function ilRenk(count: number, max: number): string {
   if (count === 0) return "#1a2035";
-  const t = Math.pow(count / max, 0.4); // sqrt-ish — düşük değerleri öne çıkar
+  const t = Math.pow(count / max, 0.4);
   return `rgba(0,212,255,${(0.18 + t * 0.82).toFixed(2)})`;
 }
 
 interface HoverInfo { name: string; count: number; x: number; y: number }
 
+// ── Tablo fallback (harita yüklenemezse) ─────────────────────────────────────
+function ProvinceTable({
+  ilMap, totalTR, otherLocs,
+}: {
+  ilMap: Map<string, number>;
+  totalTR: number;
+  otherLocs: AnalyticsStats["locations"];
+}) {
+  const rows = Array.from(ilMap.entries()).sort((a, b) => b[1] - a[1]);
+  const maxC  = Math.max(...rows.map((r) => r[1]), 1);
+
+  return (
+    <div className="p-5 space-y-4" style={{ minHeight: 320 }}>
+      <div className="flex items-center gap-2 text-[12px] text-on-surface-variant font-mono">
+        <span>🇹🇷 Türkiye toplam:</span>
+        <span className="text-primary font-semibold">{totalTR} ziyaret</span>
+      </div>
+
+      {rows.length === 0 && (
+        <p className="text-[13px] text-on-surface-variant">Henüz Türkiye'den ziyaret kaydı yok.</p>
+      )}
+
+      <div className="space-y-2">
+        {rows.slice(0, 15).map(([il, cnt]) => (
+          <div key={il} className="flex items-center gap-3">
+            <span className="text-[12px] text-on-surface-variant font-mono capitalize w-24 shrink-0">{il}</span>
+            <div className="flex-1 bg-surface-variant rounded-full h-1.5 overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${(cnt / maxC) * 100}%`, background: ilRenk(cnt, maxC) }}
+              />
+            </div>
+            <span className="text-[12px] text-primary font-mono w-8 text-right">{cnt}</span>
+          </div>
+        ))}
+      </div>
+
+      {otherLocs.length > 0 && (
+        <div className="border-t border-outline-variant pt-3">
+          <p className="text-[11px] text-on-surface-variant font-mono mb-2">Yurt dışı:</p>
+          <div className="flex flex-wrap gap-3">
+            {otherLocs.slice(0, 8).map((loc) => (
+              <span
+                key={`${loc.country_code}:${loc.city}`}
+                className="text-[11px] text-on-surface-variant font-mono flex items-center gap-1"
+              >
+                <span>
+                  {loc.country_code.toUpperCase().replace(/./g, (c) =>
+                    String.fromCodePoint(c.codePointAt(0)! + 127397)
+                  )}
+                </span>
+                {loc.country_name} — <span className="text-primary">{loc.count}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Türkiye İl Haritası ────────────────────────────────────────────────────────
 function TurkeyProvinceMap({ locations }: { locations: AnalyticsStats["locations"] }) {
-  const [hover, setHover] = useState<HoverInfo | null>(null);
+  const [geoData,    setGeoData]    = useState<unknown>(null);
+  const [geoLoading, setGeoLoading] = useState(true);
+  const [geoFailed,  setGeoFailed]  = useState(false);
+  const [hover,      setHover]      = useState<HoverInfo | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // GeoJSON'ı önceden fetch et — birden fazla URL dene
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      for (const url of GEO_URLS) {
+        try {
+          const res = await fetch(url);
+          if (!res.ok) continue;
+          const data = await res.json();
+          if (!cancelled) { setGeoData(data); setGeoLoading(false); }
+          return;
+        } catch { /* sonraki URL'yi dene */ }
+      }
+      if (!cancelled) { setGeoFailed(true); setGeoLoading(false); }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const trLocs    = locations.filter((l) => l.country_code === "TR");
   const otherLocs = locations.filter((l) => l.country_code !== "TR");
 
-  // İl adı (normalize) → toplam ziyaret
   const ilMap = new Map<string, number>();
   for (const loc of trLocs) {
     const k = normTR(loc.city);
     if (k) ilMap.set(k, (ilMap.get(k) || 0) + loc.count);
   }
 
-  const maxCount  = Math.max(...Array.from(ilMap.values()), 1);
-  const totalTR   = trLocs.reduce((s, l) => s + l.count, 0);
+  const maxCount   = Math.max(...Array.from(ilMap.values()), 1);
+  const totalTR    = trLocs.reduce((s, l) => s + l.count, 0);
   const totalDiger = otherLocs.reduce((s, l) => s + l.count, 0);
+  const topIller   = Array.from(ilMap.entries()).sort((a, b) => b[1] - a[1]).slice(0, 7);
 
-  const topIller = Array.from(ilMap.entries())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 7);
+  // ── Yükleniyor ──
+  if (geoLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 text-on-surface-variant" style={{ height: 320 }}>
+        <span className="material-symbols-outlined text-[32px] animate-spin" style={{ animationDuration: "1s" }}>
+          progress_activity
+        </span>
+        <span className="text-[13px] font-mono">Harita yükleniyor…</span>
+      </div>
+    );
+  }
+
+  // ── GeoJSON yüklenemedi → tablo göster ──
+  if (geoFailed || !geoData) {
+    return <ProvinceTable ilMap={ilMap} totalTR={totalTR} otherLocs={otherLocs} />;
+  }
 
   const handleEnter = (name: string, count: number) =>
     (e: React.MouseEvent<SVGPathElement>) => {
@@ -58,7 +155,6 @@ function TurkeyProvinceMap({ locations }: { locations: AnalyticsStats["locations
       const r = containerRef.current.getBoundingClientRect();
       setHover({ name, count, x: e.clientX - r.left, y: e.clientY - r.top });
     };
-
   const handleMove = (name: string, count: number) =>
     (e: React.MouseEvent<SVGPathElement>) => {
       if (!containerRef.current) return;
@@ -74,7 +170,7 @@ function TurkeyProvinceMap({ locations }: { locations: AnalyticsStats["locations
         style={{ width: "100%", height: "100%" }}
       >
         <ZoomableGroup zoom={1} minZoom={1} maxZoom={10}>
-          <Geographies geography={TURKEY_GEO}>
+          <Geographies geography={geoData}>
             {({ geographies }: { geographies: unknown[] }) =>
               (geographies as Record<string, unknown>[]).map((geo) => {
                 const props = geo.properties as Record<string, string> | undefined;
@@ -134,14 +230,13 @@ function TurkeyProvinceMap({ locations }: { locations: AnalyticsStats["locations
       {/* Top iller */}
       <div className="absolute bottom-3 left-3 bg-surface/90 backdrop-blur-sm border border-outline-variant rounded-lg px-3 py-2 text-[11px] space-y-1">
         <div className="flex items-center justify-between gap-4 mb-1.5 font-mono text-on-surface-variant">
-          <span className="flex items-center gap-1">🇹🇷 Türkiye</span>
+          <span>🇹🇷 Türkiye</span>
           <span className="text-primary font-semibold">{totalTR} ziyaret</span>
         </div>
         {topIller.map(([il, cnt]) => (
           <div key={il} className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-[#00d4ff] shrink-0" />
-            <span className="text-on-surface-variant font-mono capitalize"
-              style={{ minWidth: 72 }}>{il}</span>
+            <span className="text-on-surface-variant font-mono capitalize" style={{ minWidth: 72 }}>{il}</span>
             <span className="text-primary font-mono ml-auto">{cnt}</span>
           </div>
         ))}
@@ -153,7 +248,9 @@ function TurkeyProvinceMap({ locations }: { locations: AnalyticsStats["locations
       {/* Yurt dışı özet */}
       {totalDiger > 0 && (
         <div className="absolute bottom-3 right-3 bg-surface/90 backdrop-blur-sm border border-outline-variant rounded-lg px-3 py-2 text-[11px] max-w-[180px]">
-          <div className="text-on-surface-variant font-mono mb-1">Yurt dışı: <span className="text-primary">{totalDiger}</span></div>
+          <div className="text-on-surface-variant font-mono mb-1">
+            Yurt dışı: <span className="text-primary">{totalDiger}</span>
+          </div>
           {otherLocs.slice(0, 4).map((loc) => (
             <div key={`${loc.country_code}:${loc.city}`} className="flex items-center gap-1.5 text-[10px]">
               <span>
