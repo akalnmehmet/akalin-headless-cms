@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 
 import { getProjects } from "../../api/projects";
 import { useDocumentMeta } from "../../hooks/useDocumentMeta";
+import { clImg } from "../../utils/cloudinary";
 import type { Project } from "../../types";
 
 const STATUS_MAP: Record<string, { labelKey: string; cls: string }> = {
@@ -62,7 +63,7 @@ export default function ProjectsPage() {
             >
               {project.thumbnail ? (
                 <img
-                  src={project.thumbnail.file_url}
+                  src={clImg(project.thumbnail.file_url, "thumbnail")}
                   alt={project.thumbnail.alt_text || project.title}
                   className="w-full h-44 object-cover opacity-80 group-hover:opacity-100 transition-opacity"
                   loading="lazy"

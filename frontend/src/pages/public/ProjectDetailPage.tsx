@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 
 import { getProjectBySlug, getProjects } from "../../api/projects";
 import { useDocumentMeta } from "../../hooks/useDocumentMeta";
+import { clImg } from "../../utils/cloudinary";
 import type { Project } from "../../types";
 
 const STATUS_MAP: Record<string, { labelKey: string; color: string }> = {
@@ -123,7 +124,7 @@ export default function ProjectDetailPage() {
         {project.thumbnail ? (
           <div className="w-full h-[340px] rounded-2xl overflow-hidden border border-outline-variant mb-10">
             <img
-              src={project.thumbnail.file_url}
+              src={clImg(project.thumbnail.file_url, "hero")}
               alt={project.thumbnail.alt_text || project.title}
               className="w-full h-full object-cover"
             />
@@ -195,11 +196,11 @@ export default function ProjectDetailPage() {
                   {gallery.map((img) => (
                     <button
                       key={img.id}
-                      onClick={() => setLightbox(img.file_url)}
+                      onClick={() => setLightbox(clImg(img.file_url, "gallery"))}
                       className="aspect-video rounded-xl overflow-hidden border border-outline-variant hover:border-primary/40 transition-all group"
                     >
                       <img
-                        src={img.file_url}
+                        src={clImg(img.file_url, "thumbnail")}
                         alt={img.alt_text || project.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         loading="lazy"
@@ -305,7 +306,7 @@ export default function ProjectDetailPage() {
                   >
                     {p.thumbnail ? (
                       <img
-                        src={p.thumbnail.file_url}
+                        src={clImg(p.thumbnail.file_url, "thumbnail")}
                         alt={p.thumbnail.alt_text || p.title}
                         className="w-full h-32 object-cover opacity-80 group-hover:opacity-100 transition-opacity"
                         loading="lazy"

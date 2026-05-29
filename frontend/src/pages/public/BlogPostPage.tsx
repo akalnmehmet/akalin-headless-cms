@@ -9,6 +9,7 @@ import TableOfContents from "../../components/TableOfContents";
 import { extractHeadingsAndAddIds } from "../../utils/tocUtils";
 import type { TocItem } from "../../utils/tocUtils";
 import { useDocumentMeta } from "../../hooks/useDocumentMeta";
+import { clImg } from "../../utils/cloudinary";
 import type { BlogPostDetail, BlogPostList } from "../../types";
 
 const ALLOWED_TAGS = [
@@ -79,7 +80,7 @@ export default function BlogPostPage() {
   useDocumentMeta({
     title:               post ? `${post.title} — ${t("blog.title")}` : undefined,
     description:         post?.meta_description || post?.summary || undefined,
-    image:               post?.featured_image?.file_url || undefined,
+    image:               clImg(post?.featured_image?.file_url, "og") || undefined,
     type:                "article",
     locale:              i18n.language === "en" ? "en_US" : "tr_TR",
     articlePublishedTime: post?.created_at,
@@ -249,7 +250,7 @@ export default function BlogPostPage() {
     "@type": "BlogPosting",
     "headline": post.meta_title || post.title,
     "description": post.meta_description || post.summary,
-    "image": post.featured_image?.file_url || undefined,
+    "image": clImg(post.featured_image?.file_url, "og") || undefined,
     "url": typeof window !== "undefined" ? window.location.href : "",
     "datePublished": post.created_at,
     "dateModified": post.updated_at,
@@ -382,7 +383,7 @@ export default function BlogPostPage() {
               {post.featured_image && (
                 <div className="w-full h-[320px] rounded-xl overflow-hidden border border-outline-variant">
                   <img
-                    src={post.featured_image.file_url}
+                    src={clImg(post.featured_image.file_url, "hero")}
                     alt={post.featured_image.alt_text || post.title}
                     className="w-full h-full object-cover"
                     loading="lazy"
@@ -418,7 +419,7 @@ export default function BlogPostPage() {
                       <div className="h-32 bg-surface-variant rounded mb-3 overflow-hidden">
                         {rel.featured_image ? (
                           <img
-                            src={rel.featured_image.file_url}
+                            src={clImg(rel.featured_image.file_url, "thumbnail")}
                             alt={rel.featured_image.alt_text || rel.title}
                             className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-150"
                             loading="lazy"

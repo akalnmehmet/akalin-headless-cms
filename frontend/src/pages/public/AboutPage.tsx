@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { getCareer } from "../../api/career";
 import { getSiteSettings } from "../../api/settings";
 import { useDocumentMeta } from "../../hooks/useDocumentMeta";
+import { clImg } from "../../utils/cloudinary";
 import type { CareerEntry, SiteSettings } from "../../types";
 
 const ENTRY_TYPE_LABEL: Record<string, string> = {
@@ -93,7 +94,7 @@ export default function AboutPage() {
                 <div className="absolute inset-0 bg-primary/10 rounded-3xl blur-xl group-hover:bg-primary/20 transition-all duration-300 -z-10" />
                 <div className="w-32 h-32 md:w-36 md:h-36 rounded-3xl overflow-hidden border border-outline-variant bg-surface-container shadow-md transition-transform duration-300 group-hover:scale-[1.02]">
                   <img
-                    src={settings.owner_image.file_url}
+                    src={clImg(settings.owner_image.file_url, "avatar")}
                     alt={settings.owner_name}
                     className="w-full h-full object-cover"
                   />

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { deleteMedia, getMediaList, uploadMedia } from "../../api/media";
+import { clImg } from "../../utils/cloudinary";
 import type { Media } from "../../types";
 
 function formatBytes(bytes: number): string {
@@ -138,7 +139,7 @@ export default function MediaLibrary() {
                 className="group relative aspect-square rounded-xl overflow-hidden border border-outline-variant hover:border-primary/40 transition-all duration-150 cursor-pointer"
               >
                 <img
-                  src={item.file_url}
+                  src={clImg(item.file_url, "thumbnail")}
                   alt={item.alt_text || item.original_name}
                   className="w-full h-full object-cover"
                   loading="lazy"

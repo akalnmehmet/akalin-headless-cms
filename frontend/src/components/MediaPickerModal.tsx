@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { getMediaList, uploadMedia } from "../api/media";
+import { clImg } from "../utils/cloudinary";
 import type { Media } from "../types";
 
 interface Props {
@@ -137,7 +138,7 @@ export default function MediaPickerModal({ current, onSelect, onClose }: Props) 
                     }`}
                   >
                     <img
-                      src={item.file_url}
+                      src={clImg(item.file_url, "thumbnail")}
                       alt={item.alt_text || item.original_name}
                       className="w-full h-full object-cover"
                       loading="lazy"
