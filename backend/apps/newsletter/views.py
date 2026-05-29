@@ -151,7 +151,76 @@ class SubscriberListView(APIView):
     permission_classes = [IsAdminUser]
 
     def get(self, request):
-        subs = Subscriber.objects.values(
-            "id", "email", "is_active", "created_at", "confirmed_at"
+        subs = list(
+            Subscriber.objects.values(
+                "id", "email", "is_active", "created_at", "confirmed_at", "unsubscribed_at"
+            )
         )
-        return Response({"count": len(list(subs)), "results": list(subs)})
+        return Response({"count": len(subs), "results": subs})
+
+
+class SubscriberDeleteView(APIView):
+    """DELETE /api/newsletter/subscribers/<id>/  (admin only)"""
+
+    permission_classes = [IsAdminUser]
+
+    def delete(self, request, sub_id):
+        Subscriber.objects.filter(id=sub_id).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class TestSendView(APIView):
+    """POST /api/newsletter/test-send/  — tek adrese test maili (admin only)"""
+
+    permission_classes = [IsAdminUser]
+
+    def post(self, request):
+        email = (request.data.get("email") or "").strip().lower()
+        if not email or "@" not in email:
+            return Response(
+                {"detail": "Geçerli bir e-posta adresi girin."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from django.core.mail import EmailMultiAlternatives
+
+        from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "onboarding@resend.dev")
+        html_body = """<!DOCTYPE html>
+<html lang="tr">
+<head><meta charset="UTF-8" /></head>
+<body style="margin:0;padding:0;background:#0a0d14;font-family:'Segoe UI',Arial,sans-serif;color:#e2e8f0;">
+  <div style="max-width:520px;margin:0 auto;padding:40px 16px;">
+    <div style="border-bottom:1px solid #1f2d4a;padding-bottom:20px;margin-bottom:28px;">
+      <span style="font-size:20px;font-weight:700;color:#e2e8f0;">Mehmet Akalın</span>
+      <span style="margin-left:10px;font-size:12px;color:#00d4ff;font-family:monospace;
+                   background:#003344;padding:2px 8px;border-radius:4px;">newsletter · test</span>
+    </div>
+    <h2 style="margin:0 0 12px;font-size:22px;font-weight:700;color:#e2e8f0;">Test E-postası</h2>
+    <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#94a3b8;">
+      Bu, admin panelinden gönderilen bir test e-postasıdır.<br />
+      Newsletter sistemi düzgün çalışıyor.
+    </p>
+    <div style="padding:16px;background:#1a2236;border-radius:8px;font-family:monospace;font-size:13px;color:#00d4ff;">
+      ✓ SMTP bağlantısı başarılı
+    </div>
+  </div>
+</body>
+</html>"""
+
+        try:
+            msg = EmailMultiAlternatives(
+                subject="[Test] Newsletter Sistemi — Mehmet Akalın",
+                body="Bu bir test e-postasıdır. Newsletter sistemi düzgün çalışıyor.",
+                from_email=from_email,
+                to=[email],
+            )
+            msg.attach_alternative(html_body, "text/html")
+            msg.send(fail_silently=False)
+        except Exception as exc:
+            logger.error("Test maili gönderilemedi: %s → %s", email, exc, exc_info=True)
+            return Response(
+                {"detail": f"Gönderim başarısız: {exc}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        return Response({"detail": f"Test e-postası {email} adresine gönderildi."})

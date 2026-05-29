@@ -3,14 +3,17 @@ import { useNavigate } from "react-router-dom";
 
 import { logout } from "../../api/auth";
 import { deleteCareerEntry, getCareer } from "../../api/career";
-import { deletePost, getAdminPosts, patchPost } from "../../api/posts";
+import { bulkDeletePosts, bulkPatchPosts, deletePost, getAdminPosts, patchPost } from "../../api/posts";
 import { deleteProject, getAdminProjects, patchProject, reorderProjects } from "../../api/projects";
 import { approveComment, deleteComment, getAdminComments, rejectComment } from "../../api/comments";
+import { deleteSubscriber, getSubscribers, sendTestEmail } from "../../api/newsletter";
 import AdminSideNav from "../../components/AdminSideNav";
+import PostCalendar from "../../components/PostCalendar";
 import SortableList from "../../components/SortableList";
 import { useAuthStore } from "../../store/authStore";
 import type { BlogPostAdmin, CareerEntry, Project } from "../../types";
 import type { AdminComment } from "../../api/comments";
+import type { Subscriber } from "../../api/newsletter";
 import AnalyticsDashboard from "./AnalyticsDashboard";
 import CareerForm from "./CareerForm";
 import MediaLibrary from "./MediaLibrary";
@@ -19,7 +22,10 @@ import SiteSettingsForm from "./SiteSettingsForm";
 
 const GrapesEditor = lazy(() => import("./GrapesEditor"));
 
-type Section  = "dashboard" | "posts" | "projects" | "career" | "media" | "settings" | "analytics" | "comments";
+type Section =
+  | "dashboard" | "posts" | "projects" | "career"
+  | "media" | "settings" | "analytics" | "comments"
+  | "newsletter" | "calendar";
 type PostTab  = "list" | "new" | "edit";
 type ProjTab  = "list" | "new" | "edit";
 type CareerTab = "list" | "new" | "edit";
@@ -56,6 +62,9 @@ export default function AdminDashboard() {
   const { refreshToken, clearTokens } = useAuthStore();
   const navigate = useNavigate();
 
+  /* ── Mobil drawer ── */
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
   /* ── Bölüm & sekme durumu ── */
   const [section,    setSection]    = useState<Section>("dashboard");
   const [postTab,    setPostTab]    = useState<PostTab>("list");
@@ -78,6 +87,17 @@ export default function AdminDashboard() {
   const [commentCount,    setCommentCount]    = useState(0);
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [commentFilter,   setCommentFilter]   = useState<"pending" | "approved" | "all">("pending");
+
+  /* ── Newsletter ── */
+  const [subscribers,       setSubscribers]       = useState<Subscriber[]>([]);
+  const [subsLoading,       setSubsLoading]       = useState(false);
+  const [testEmail,         setTestEmail]         = useState("");
+  const [testEmailStatus,   setTestEmailStatus]   = useState<"idle" | "sending" | "ok" | "err">("idle");
+  const [testEmailMsg,      setTestEmailMsg]       = useState("");
+
+  /* ── Toplu aksiyonlar ── */
+  const [selectedPostIds,   setSelectedPostIds]   = useState<Set<string>>(new Set());
+  const [bulkWorking,       setBulkWorking]       = useState(false);
 
   /* ── Veri yükleme ── */
   const loadPosts = useCallback(() => {
@@ -119,6 +139,69 @@ export default function AdminDashboard() {
   useEffect(() => { loadCareer(); },   [loadCareer]);
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { if (section === "comments") loadComments(commentFilter); }, [section, commentFilter, loadComments]);
+
+  /* ── Newsletter yükleme ── */
+  const loadSubscribers = useCallback(() => {
+    setSubsLoading(true);
+    getSubscribers()
+      .then((d) => setSubscribers(d.results))
+      .finally(() => setSubsLoading(false));
+  }, []);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { if (section === "newsletter") loadSubscribers(); }, [section, loadSubscribers]);
+
+  const handleTestEmail = async () => {
+    if (!testEmail.trim()) return;
+    setTestEmailStatus("sending");
+    try {
+      const r = await sendTestEmail(testEmail.trim());
+      setTestEmailMsg(r.detail);
+      setTestEmailStatus("ok");
+    } catch {
+      setTestEmailMsg("Gönderim başarısız. E-posta veya SMTP ayarlarını kontrol edin.");
+      setTestEmailStatus("err");
+    }
+    setTimeout(() => setTestEmailStatus("idle"), 5000);
+  };
+
+  /* ── Toplu aksiyonlar ── */
+  const toggleSelectPost = (id: string) => {
+    setSelectedPostIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectAll = () => {
+    setSelectedPostIds((prev) =>
+      prev.size === posts.length ? new Set() : new Set(posts.map((p) => p.id))
+    );
+  };
+  const handleBulkPublish = async () => {
+    if (!selectedPostIds.size) return;
+    setBulkWorking(true);
+    await bulkPatchPosts([...selectedPostIds], { status: "PUBLISHED" });
+    setSelectedPostIds(new Set());
+    setBulkWorking(false);
+    loadPosts();
+  };
+  const handleBulkArchive = async () => {
+    if (!selectedPostIds.size) return;
+    setBulkWorking(true);
+    await bulkPatchPosts([...selectedPostIds], { status: "ARCHIVED" });
+    setSelectedPostIds(new Set());
+    setBulkWorking(false);
+    loadPosts();
+  };
+  const handleBulkDelete = async () => {
+    if (!selectedPostIds.size) return;
+    if (!confirm(`${selectedPostIds.size} yazı kalıcı olarak silinsin mi?`)) return;
+    setBulkWorking(true);
+    await bulkDeletePosts([...selectedPostIds]);
+    setSelectedPostIds(new Set());
+    setBulkWorking(false);
+    loadPosts();
+  };
 
   /* ── Post aksiyonları ── */
   const handlePostStatusToggle = async (p: BlogPostAdmin) => {
@@ -185,6 +268,7 @@ export default function AdminDashboard() {
     setEditingPost(undefined);
     setEditingProject(undefined);
     setEditingCareer(undefined);
+    setSelectedPostIds(new Set());
   };
 
   const TYPE_LABEL: Record<string, string> = {
@@ -205,10 +289,24 @@ export default function AdminDashboard() {
         section={section}
         onSectionChange={handleSectionChange}
         onLogout={handleLogout}
+        mobileOpen={mobileNavOpen}
+        onMobileClose={() => setMobileNavOpen(false)}
       />
 
       {/* Ana içerik */}
       <main className="md:ml-64 flex-1 flex flex-col h-screen overflow-hidden">
+
+        {/* ── Mobil header ── */}
+        <div className="md:hidden flex items-center gap-3 h-14 px-4 border-b border-outline-variant bg-surface shrink-0">
+          <button
+            onClick={() => setMobileNavOpen(true)}
+            className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
+            aria-label="Menüyü aç"
+          >
+            <span className="material-symbols-outlined text-[22px]">menu</span>
+          </button>
+          <span className="text-[16px] font-semibold text-on-surface">CMS Paneli</span>
+        </div>
 
         {/* ═══ DASHBOARD ═══ */}
         {section === "dashboard" && (() => {
@@ -427,7 +525,45 @@ export default function AdminDashboard() {
               </button>
             </header>
 
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-6 relative">
+              {/* Toplu aksiyon çubuğu */}
+              {selectedPostIds.size > 0 && (
+                <div className="sticky top-0 z-10 mb-4 flex items-center gap-3 px-4 py-2.5 rounded-xl bg-primary/10 border border-primary/20">
+                  <span className="text-[13px] font-semibold text-primary">
+                    {selectedPostIds.size} yazı seçili
+                  </span>
+                  <div className="flex gap-2 ml-auto">
+                    <button
+                      onClick={handleBulkPublish}
+                      disabled={bulkWorking}
+                      className="px-3 py-1.5 rounded-lg bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20 text-[12px] font-medium hover:opacity-80 transition-opacity disabled:opacity-50"
+                    >
+                      Yayınla
+                    </button>
+                    <button
+                      onClick={handleBulkArchive}
+                      disabled={bulkWorking}
+                      className="px-3 py-1.5 rounded-lg bg-[#f59e0b]/10 text-[#f59e0b] border border-[#f59e0b]/20 text-[12px] font-medium hover:opacity-80 transition-opacity disabled:opacity-50"
+                    >
+                      Arşivle
+                    </button>
+                    <button
+                      onClick={handleBulkDelete}
+                      disabled={bulkWorking}
+                      className="px-3 py-1.5 rounded-lg bg-error/10 text-error border border-error/20 text-[12px] font-medium hover:opacity-80 transition-opacity disabled:opacity-50"
+                    >
+                      Sil
+                    </button>
+                    <button
+                      onClick={() => setSelectedPostIds(new Set())}
+                      className="text-[12px] text-on-surface-variant hover:text-on-surface transition-colors ml-1"
+                    >
+                      İptal
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="bg-surface border border-outline-variant rounded-lg overflow-hidden">
                 {postsLoading ? (
                   <div className="p-12 text-center text-on-surface-variant text-[14px]">Yükleniyor...</div>
@@ -442,20 +578,38 @@ export default function AdminDashboard() {
                   <table className="w-full text-[14px]">
                     <thead className="bg-surface-container-low border-b border-outline-variant">
                       <tr>
-                        <th className="text-left px-6 py-3 text-[11px] font-semibold tracking-[0.05em] text-on-surface-variant uppercase" style={{ fontFamily: "JetBrains Mono, monospace" }}>Başlık</th>
+                        <th className="px-4 py-3 w-10">
+                          <input
+                            type="checkbox"
+                            checked={selectedPostIds.size === posts.length && posts.length > 0}
+                            onChange={toggleSelectAll}
+                            className="w-4 h-4 accent-primary cursor-pointer"
+                            title="Tümünü seç"
+                          />
+                        </th>
+                        <th className="text-left px-3 py-3 text-[11px] font-semibold tracking-[0.05em] text-on-surface-variant uppercase" style={{ fontFamily: "JetBrains Mono, monospace" }}>Başlık</th>
                         <th className="text-left px-4 py-3 text-[11px] font-semibold tracking-[0.05em] text-on-surface-variant uppercase" style={{ fontFamily: "JetBrains Mono, monospace" }}>Durum</th>
-                        <th className="text-left px-4 py-3 text-[11px] font-semibold tracking-[0.05em] text-on-surface-variant uppercase" style={{ fontFamily: "JetBrains Mono, monospace" }}>Okuma</th>
-                        <th className="text-left px-4 py-3 text-[11px] font-semibold tracking-[0.05em] text-on-surface-variant uppercase" style={{ fontFamily: "JetBrains Mono, monospace" }}>Görüntülenme</th>
-                        <th className="text-left px-4 py-3 text-[11px] font-semibold tracking-[0.05em] text-on-surface-variant uppercase" style={{ fontFamily: "JetBrains Mono, monospace" }}>Tarih</th>
+                        <th className="text-left px-4 py-3 text-[11px] font-semibold tracking-[0.05em] text-on-surface-variant uppercase hidden sm:table-cell" style={{ fontFamily: "JetBrains Mono, monospace" }}>Okuma</th>
+                        <th className="text-left px-4 py-3 text-[11px] font-semibold tracking-[0.05em] text-on-surface-variant uppercase hidden md:table-cell" style={{ fontFamily: "JetBrains Mono, monospace" }}>Görüntülenme</th>
+                        <th className="text-left px-4 py-3 text-[11px] font-semibold tracking-[0.05em] text-on-surface-variant uppercase hidden lg:table-cell" style={{ fontFamily: "JetBrains Mono, monospace" }}>Tarih</th>
                         <th className="px-4 py-3" />
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-outline-variant/40">
                       {posts.map((post) => {
                         const s = POST_STATUS[post.status];
+                        const selected = selectedPostIds.has(post.id);
                         return (
-                          <tr key={post.id} className="hover:bg-surface-container-low transition-colors duration-150">
-                            <td className="px-6 py-4">
+                          <tr key={post.id} className={`transition-colors duration-150 ${selected ? "bg-primary/5" : "hover:bg-surface-container-low"}`}>
+                            <td className="px-4 py-4">
+                              <input
+                                type="checkbox"
+                                checked={selected}
+                                onChange={() => toggleSelectPost(post.id)}
+                                className="w-4 h-4 accent-primary cursor-pointer"
+                              />
+                            </td>
+                            <td className="px-3 py-4">
                               <div className="font-medium text-on-surface line-clamp-1">{post.title}</div>
                               <div
                                 className="text-on-surface-variant text-[12px] mt-0.5"
@@ -474,12 +628,12 @@ export default function AdminDashboard() {
                               </button>
                             </td>
                             <td
-                              className="px-4 py-4 text-on-surface-variant"
+                              className="px-4 py-4 text-on-surface-variant hidden sm:table-cell"
                               style={{ fontFamily: "JetBrains Mono, monospace" }}
                             >
                               {post.reading_time} dk
                             </td>
-                            <td className="px-4 py-4">
+                            <td className="px-4 py-4 hidden md:table-cell">
                               <span
                                 className="inline-flex items-center gap-1 text-[12px] text-on-surface-variant"
                                 style={{ fontFamily: "JetBrains Mono, monospace" }}
@@ -489,7 +643,7 @@ export default function AdminDashboard() {
                               </span>
                             </td>
                             <td
-                              className="px-4 py-4 text-on-surface-variant"
+                              className="px-4 py-4 text-on-surface-variant hidden lg:table-cell"
                               style={{ fontFamily: "JetBrains Mono, monospace" }}
                             >
                               {new Date(post.created_at).toLocaleDateString("tr-TR")}
@@ -767,6 +921,23 @@ export default function AdminDashboard() {
         {/* ═══ ANALİTİK ═══ */}
         {section === "analytics" && <AnalyticsDashboard />}
 
+        {/* ═══ TAKVİM ═══ */}
+        {section === "calendar" && (
+          <>
+            <header className="h-16 border-b border-outline-variant bg-surface flex items-center px-6 shrink-0">
+              <h1 className="text-[24px] font-semibold leading-[1.3] tracking-[-0.01em] text-on-surface">
+                Yazı Takvimi
+              </h1>
+            </header>
+            <div className="flex-1 overflow-y-auto p-6">
+              <PostCalendar
+                posts={posts}
+                onEditPost={(p) => { setEditingPost(p); setPostTab("edit"); setSection("posts"); }}
+              />
+            </div>
+          </>
+        )}
+
         {/* ═══ YORUMLAR ═══ */}
         {section === "comments" && (
           <>
@@ -875,6 +1046,127 @@ export default function AdminDashboard() {
                   ))}
                 </div>
               )}
+            </div>
+          </>
+        )}
+
+        {/* ═══ NEWSLETTER ═══ */}
+        {section === "newsletter" && (
+          <>
+            <header className="h-16 border-b border-outline-variant bg-surface flex items-center px-6 gap-4 shrink-0">
+              <h1 className="text-[24px] font-semibold leading-[1.3] tracking-[-0.01em] text-on-surface">
+                Newsletter
+              </h1>
+              {!subsLoading && (
+                <span className="text-[12px] font-mono text-on-surface-variant">
+                  {subscribers.filter((s) => s.is_active).length} aktif /{" "}
+                  {subscribers.length} toplam
+                </span>
+              )}
+            </header>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {/* Test e-posta gönder */}
+              <div className="bg-surface border border-outline-variant rounded-xl p-5">
+                <h2 className="text-[14px] font-semibold text-on-surface mb-3 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[16px] text-primary">send</span>
+                  Test E-postası Gönder
+                </h2>
+                <div className="flex gap-3">
+                  <input
+                    type="email"
+                    value={testEmail}
+                    onChange={(e) => setTestEmail(e.target.value)}
+                    placeholder="test@ornek.com"
+                    className="flex-1 px-3 py-2 text-[13px] rounded-lg border border-outline-variant bg-surface-container-low text-on-surface placeholder:text-outline focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/20 transition-colors"
+                  />
+                  <button
+                    onClick={handleTestEmail}
+                    disabled={testEmailStatus === "sending" || !testEmail.trim()}
+                    className="px-4 py-2 rounded-lg bg-primary text-on-primary text-[13px] font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {testEmailStatus === "sending" ? (
+                      <span className="material-symbols-outlined text-[15px] animate-spin">progress_activity</span>
+                    ) : (
+                      <span className="material-symbols-outlined text-[15px]">mail</span>
+                    )}
+                    Gönder
+                  </button>
+                </div>
+                {testEmailStatus !== "idle" && testEmailStatus !== "sending" && (
+                  <p className={`mt-2 text-[12px] font-mono ${testEmailStatus === "ok" ? "text-[#10b981]" : "text-error"}`}>
+                    {testEmailMsg}
+                  </p>
+                )}
+              </div>
+
+              {/* Abone listesi */}
+              <div className="bg-surface border border-outline-variant rounded-xl overflow-hidden">
+                <div className="flex items-center justify-between px-5 py-3 border-b border-outline-variant">
+                  <h2 className="text-[14px] font-semibold text-on-surface">Abone Listesi</h2>
+                  <button
+                    onClick={loadSubscribers}
+                    className="text-[12px] text-primary hover:opacity-80 transition-opacity flex items-center gap-1"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">refresh</span>
+                    Yenile
+                  </button>
+                </div>
+                {subsLoading ? (
+                  <div className="p-8 text-center text-on-surface-variant text-[14px]">Yükleniyor...</div>
+                ) : subscribers.length === 0 ? (
+                  <div className="p-8 text-center text-on-surface-variant text-[14px]">Henüz abone yok.</div>
+                ) : (
+                  <table className="w-full text-[13px]">
+                    <thead className="bg-surface-container-low border-b border-outline-variant">
+                      <tr>
+                        <th className="text-left px-5 py-3 text-[11px] font-semibold text-on-surface-variant uppercase tracking-[0.05em]" style={{ fontFamily: "JetBrains Mono, monospace" }}>E-posta</th>
+                        <th className="text-left px-4 py-3 text-[11px] font-semibold text-on-surface-variant uppercase tracking-[0.05em]" style={{ fontFamily: "JetBrains Mono, monospace" }}>Durum</th>
+                        <th className="text-left px-4 py-3 text-[11px] font-semibold text-on-surface-variant uppercase tracking-[0.05em] hidden sm:table-cell" style={{ fontFamily: "JetBrains Mono, monospace" }}>Kayıt</th>
+                        <th className="text-left px-4 py-3 text-[11px] font-semibold text-on-surface-variant uppercase tracking-[0.05em] hidden md:table-cell" style={{ fontFamily: "JetBrains Mono, monospace" }}>Onay</th>
+                        <th className="px-4 py-3 w-10" />
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-outline-variant/40">
+                      {subscribers.map((sub) => (
+                        <tr key={sub.id} className="hover:bg-surface-container-low transition-colors">
+                          <td className="px-5 py-3 text-on-surface font-medium">{sub.email}</td>
+                          <td className="px-4 py-3">
+                            <span className={`text-[11px] px-2 py-0.5 rounded-full font-mono border ${
+                              sub.is_active
+                                ? "bg-[#10b981]/10 text-[#10b981] border-[#10b981]/20"
+                                : sub.unsubscribed_at
+                                ? "bg-error/10 text-error border-error/20"
+                                : "bg-[#f59e0b]/10 text-[#f59e0b] border-[#f59e0b]/20"
+                            }`}>
+                              {sub.is_active ? "Aktif" : sub.unsubscribed_at ? "İptal" : "Bekliyor"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-on-surface-variant font-mono text-[12px] hidden sm:table-cell">
+                            {new Date(sub.created_at).toLocaleDateString("tr-TR")}
+                          </td>
+                          <td className="px-4 py-3 text-on-surface-variant font-mono text-[12px] hidden md:table-cell">
+                            {sub.confirmed_at
+                              ? new Date(sub.confirmed_at).toLocaleDateString("tr-TR")
+                              : "—"}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <button
+                              onClick={() => {
+                                if (!confirm(`${sub.email} silinsin mi?`)) return;
+                                deleteSubscriber(sub.id).then(loadSubscribers);
+                              }}
+                              className="text-[12px] text-error hover:opacity-80 font-medium transition-opacity"
+                            >
+                              Sil
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
             </div>
           </>
         )}

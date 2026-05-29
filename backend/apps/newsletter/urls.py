@@ -1,10 +1,12 @@
 from django.urls import path
 
-from .views import ConfirmView, SubscribeView, SubscriberListView, UnsubscribeView
+from .views import ConfirmView, SubscribeView, SubscriberDeleteView, SubscriberListView, TestSendView, UnsubscribeView
 
 urlpatterns = [
-    path("newsletter/subscribe/",          SubscribeView.as_view(),    name="newsletter-subscribe"),
-    path("newsletter/confirm/<str:token>/", ConfirmView.as_view(),     name="newsletter-confirm"),
-    path("newsletter/unsubscribe/<str:token>/", UnsubscribeView.as_view(), name="newsletter-unsubscribe"),
-    path("newsletter/subscribers/",        SubscriberListView.as_view(), name="newsletter-subscribers"),
+    path("newsletter/subscribe/",               SubscribeView.as_view(),       name="newsletter-subscribe"),
+    path("newsletter/confirm/<str:token>/",      ConfirmView.as_view(),         name="newsletter-confirm"),
+    path("newsletter/unsubscribe/<str:token>/",  UnsubscribeView.as_view(),     name="newsletter-unsubscribe"),
+    path("newsletter/subscribers/",             SubscriberListView.as_view(),   name="newsletter-subscribers"),
+    path("newsletter/subscribers/<str:sub_id>/", SubscriberDeleteView.as_view(), name="newsletter-subscriber-delete"),
+    path("newsletter/test-send/",               TestSendView.as_view(),         name="newsletter-test-send"),
 ]

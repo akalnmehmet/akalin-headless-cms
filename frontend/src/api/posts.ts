@@ -31,3 +31,9 @@ export const patchPost = (id: string, data: Partial<BlogPostAdmin>) =>
 
 export const deletePost = (id: string) =>
   api.delete(`/api/admin/posts/${id}/`).then((r) => r.data);
+
+export const bulkPatchPosts = (ids: string[], data: Partial<BlogPostAdmin>) =>
+  Promise.all(ids.map((id) => patchPost(id, data)));
+
+export const bulkDeletePosts = (ids: string[]) =>
+  Promise.all(ids.map((id) => deletePost(id)));
