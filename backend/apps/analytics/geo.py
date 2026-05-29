@@ -45,8 +45,10 @@ def _make_cache_key(ip: str) -> str:
 
 def _is_private(ip: str) -> bool:
     """Yerel/loopback IP'leri geo lookup'a gönderme."""
+    if not ip:
+        return True
     return ip.startswith(("127.", "10.", "172.16.", "172.17.", "172.18.",
-                          "172.19.", "172.2", "192.168.", "::1", ""))
+                          "172.19.", "172.2", "192.168.", "::1"))
 
 
 def get_geo(ip: str) -> GeoResult:
