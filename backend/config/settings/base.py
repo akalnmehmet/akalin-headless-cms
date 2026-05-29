@@ -138,15 +138,16 @@ MEDIA_MAX_UPLOAD_SIZE = 5 * 1024 * 1024  # 5 MB
 MEDIA_ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 MEDIA_MAX_DIMENSION = 2048
 
-# E-posta — dev: console, prod: SMTP (env vars ile override)
-EMAIL_BACKEND  = config("EMAIL_BACKEND",  default="django.core.mail.backends.console.EmailBackend")
-EMAIL_HOST     = config("EMAIL_HOST",     default="smtp.gmail.com")
-EMAIL_PORT     = config("EMAIL_PORT",     default=587, cast=int)
-EMAIL_USE_TLS  = config("EMAIL_USE_TLS",  default=True, cast=bool)
-EMAIL_HOST_USER     = config("EMAIL_HOST_USER",     default="")
-EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
-DEFAULT_FROM_EMAIL  = config("DEFAULT_FROM_EMAIL",  default="noreply@portfolyo.dev")
-CONTACT_EMAIL       = config("CONTACT_EMAIL",       default="mehmet@example.com")
+# E-posta — dev: console  |  prod: Resend HTTP API (anymail)
+# Render free tier SMTP portlarını bloklar; HTTP API kullanmak gerekir.
+EMAIL_BACKEND     = config("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="onboarding@resend.dev")
+CONTACT_EMAIL      = config("CONTACT_EMAIL", default="")
+
+# Anymail (Resend HTTP API) — sadece EMAIL_BACKEND=anymail.backends.resend.EmailBackend olduğunda etkin
+ANYMAIL = {
+    "RESEND_API_KEY": config("RESEND_API_KEY", default=""),
+}
 
 # ── Celery ────────────────────────────────────────────────────────────────────
 # Broker: Redis (dev'de yoksa LocMem fallback değil, Redis kurulumu beklenir)
