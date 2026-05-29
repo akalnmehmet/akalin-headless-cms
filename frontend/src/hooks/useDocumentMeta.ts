@@ -1,5 +1,8 @@
 import { useEffect } from "react";
 
+/** Sosyal medya paylaşımlarında og:image boş olduğunda kullanılacak varsayılan görsel */
+const DEFAULT_OG_IMAGE = "https://akalin-cms.vercel.app/og-image.png";
+
 /** head'deki meta tag'i bulur ya da yoksa oluşturur; önceki content'i döndürür. */
 function syncMeta(
   attrName: "name" | "property",
@@ -71,10 +74,13 @@ export function useDocumentMeta(
       : { title: titleOrOptions, description: legacyDescription };
 
   const {
-    title, description, image = "", type = "website", locale,
+    title, description, image, type = "website", locale,
     articlePublishedTime, articleModifiedTime, articleAuthor,
     articleTags, articleSection,
   } = opts;
+
+  // image verilmemişse ya da boşsa varsayılan OG görselini kullan
+  const resolvedImage = image || DEFAULT_OG_IMAGE;
   const url = typeof window !== "undefined" ? window.location.href : "";
 
   useEffect(() => {
@@ -108,8 +114,8 @@ export function useDocumentMeta(
     }
     syncMeta("property", "og:type",  type);
     syncMeta("property", "og:url",   url);
-    syncMeta("property", "og:image", image);
-    syncMeta("name",     "twitter:image", image);
+    syncMeta("property", "og:image", resolvedImage);
+    syncMeta("name",     "twitter:image", resolvedImage);
     if (locale) syncMeta("property", "og:locale", locale);
     syncCanonical(url);
 
