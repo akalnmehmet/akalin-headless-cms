@@ -47,10 +47,29 @@ function tagColors(color: string, selected: boolean) {
   return {};
 }
 
+/** Taslak otomatik kayıt için localStorage anahtarı */
+interface DraftData {
+  title: string; titleEn: string;
+  summary: string; summaryEn: string;
+  metaTitle: string; metaDescription: string;
+  slug: string;
+  status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+  publishAt: string;
+  selectedCategories: string[];
+  selectedTags: string[];
+  contentJsonTr: unknown;
+  contentJsonEn: unknown;
+  activeLang: "tr" | "en";
+  savedAt: string;
+}
+
 export default function GrapesEditor({ post, onSaved, onClose }: Props) {
   const editorRef      = useRef<HTMLDivElement>(null);
   const editorInstance = useRef<Editor | null>(null);
   const { accessToken } = useAuthStore();
+
+  /** Yazıya özgü taslak anahtarı */
+  const draftKey = `grapes_draft_${post?.id ?? "new"}`;
 
   /* ── Form state ── */
   const [activeLang,         setActiveLang]         = useState<"tr" | "en">("tr");
@@ -73,6 +92,10 @@ export default function GrapesEditor({ post, onSaved, onClose }: Props) {
   const [loadingMeta,     setLoadingMeta]     = useState(true);
   const [saving,  setSaving]  = useState(false);
   const [error,   setError]   = useState<string | null>(null);
+
+  /* ── Otomatik kayıt state ── */
+  const [draftSavedAt,    setDraftSavedAt]    = useState<Date | null>(null);
+  const [pendingDraft,    setPendingDraft]    = useState<DraftData | null>(null);
 
   /* ── Inline yeni kategori / etiket ── */
   const [newCatInput,    setNewCatInput]    = useState("");
@@ -138,6 +161,86 @@ export default function GrapesEditor({ post, onSaved, onClose }: Props) {
       setAllTags(tagRes.data.results);
     }).finally(() => setLoadingMeta(false));
   }, []);
+
+  /* ── Mount'ta kayıtlı taslak var mı kontrol et ── */
+  useEffect(() => {
+    const raw = localStorage.getItem(draftKey);
+    if (!raw) return;
+    try {
+      const draft = JSON.parse(raw) as DraftData;
+      // Sunucuda zaten kayıtlı bir yazıyı düzenliyorsak ve
+      // taslak sunucu verisinden eskiyse gösterme
+      if (post?.updated_at) {
+        const serverDate = new Date(post.updated_at).getTime();
+        const draftDate  = new Date(draft.savedAt).getTime();
+        if (draftDate < serverDate) {
+          localStorage.removeItem(draftKey);
+          return;
+        }
+      }
+      setPendingDraft(draft);
+    } catch {
+      localStorage.removeItem(draftKey);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* ── Taslağı geri yükle ── */
+  const handleRestoreDraft = () => {
+    if (!pendingDraft) return;
+    const d = pendingDraft;
+    setTitle(d.title);
+    setTitleEn(d.titleEn);
+    setSummary(d.summary);
+    setSummaryEn(d.summaryEn);
+    setMetaTitle(d.metaTitle);
+    setMetaDescription(d.metaDescription);
+    setSlug(d.slug);
+    setStatus(d.status);
+    setPublishAt(d.publishAt);
+    setSelectedCategories(d.selectedCategories);
+    setSelectedTags(d.selectedTags);
+    setContentJsonTr(d.contentJsonTr);
+    setContentJsonEn(d.contentJsonEn);
+    setActiveLang(d.activeLang);
+    // GrapesJS içeriğini de yükle (editor zaten init olduysa)
+    const editor = editorInstance.current;
+    if (editor) {
+      const json = d.activeLang === "tr" ? d.contentJsonTr : d.contentJsonEn;
+      if (hasValidJson(json)) {
+        editor.setComponents(json as Parameters<Editor["setComponents"]>[0]);
+      }
+    }
+    setPendingDraft(null);
+  };
+
+  const handleDismissDraft = () => {
+    localStorage.removeItem(draftKey);
+    setPendingDraft(null);
+  };
+
+  /* ── 30 saniyede bir otomatik kayıt ── */
+  useEffect(() => {
+    const saveDraft = () => {
+      const editor = editorInstance.current;
+      const trJson = activeLang === "tr" && editor ? editor.getComponents() : contentJsonTr;
+      const enJson = activeLang === "en" && editor ? editor.getComponents() : contentJsonEn;
+      const draft: DraftData = {
+        title, titleEn, summary, summaryEn,
+        metaTitle, metaDescription, slug, status, publishAt,
+        selectedCategories, selectedTags,
+        contentJsonTr: trJson, contentJsonEn: enJson,
+        activeLang, savedAt: new Date().toISOString(),
+      };
+      localStorage.setItem(draftKey, JSON.stringify(draft));
+      setDraftSavedAt(new Date());
+    };
+    const id = setInterval(saveDraft, 30_000);
+    return () => clearInterval(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, titleEn, summary, summaryEn, metaTitle, metaDescription,
+      slug, status, publishAt, selectedCategories, selectedTags,
+      contentJsonTr, contentJsonEn, activeLang]);
 
   /* ── GrapesJS ── */
   useEffect(() => {
@@ -430,6 +533,9 @@ const kullanici: Kullanici = {
 
       if (post?.id) await updatePost(post.id, payload);
       else          await createPost(payload);
+      // Sunucuya başarıyla kaydedildi → taslağı temizle
+      localStorage.removeItem(draftKey);
+      setDraftSavedAt(null);
       onSaved?.();
     } catch (err: unknown) {
       const detail =
@@ -497,6 +603,39 @@ const kullanici: Kullanici = {
             İngilizce (EN)
           </button>
         </div>
+
+        {/* ── Taslak geri yükleme banner ── */}
+        {pendingDraft && (
+          <div className="flex items-center justify-between gap-4 px-4 py-3 rounded-xl border border-[#f59e0b]/30 bg-[#f59e0b]/08 text-[#f59e0b] max-w-4xl">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="material-symbols-outlined text-[18px] shrink-0">restore</span>
+              <span className="text-[13px]" style={{ fontFamily: "JetBrains Mono, monospace" }}>
+                Kaydedilmemiş taslak bulundu —{" "}
+                <span className="opacity-70">
+                  {new Date(pendingDraft.savedAt).toLocaleString("tr-TR", {
+                    day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+                  })}
+                </span>
+              </span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleRestoreDraft}
+                className="px-3 py-1.5 rounded-lg bg-[#f59e0b] text-black text-[12px] font-semibold hover:opacity-90 transition-opacity"
+              >
+                Geri Yükle
+              </button>
+              <button
+                type="button"
+                onClick={handleDismissDraft}
+                className="px-3 py-1.5 rounded-lg border border-[#f59e0b]/40 text-[#f59e0b] text-[12px] font-medium hover:bg-[#f59e0b]/10 transition-colors"
+              >
+                Yoksay
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Hata mesajı */}
         {error && (
@@ -1033,14 +1172,29 @@ const kullanici: Kullanici = {
 
       {/* ── Alt kaydet çubuğu ── */}
       <div className="h-16 border-t border-outline-variant bg-surface/90 backdrop-blur-md px-6 flex justify-between items-center shrink-0 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.04)]">
-        <div className="flex items-center gap-2 text-on-surface-variant">
-          <span className="material-symbols-outlined text-[18px]">history</span>
-          <span
-            className="text-[12px]"
-            style={{ fontFamily: "JetBrains Mono, monospace" }}
-          >
-            {lastUpdate}
-          </span>
+        <div className="flex items-center gap-3 text-on-surface-variant">
+          {draftSavedAt ? (
+            <>
+              <span className="material-symbols-outlined text-[18px] text-[#f59e0b]">bolt</span>
+              <span
+                className="text-[12px] text-[#f59e0b]"
+                style={{ fontFamily: "JetBrains Mono, monospace" }}
+              >
+                Taslak kaydedildi —{" "}
+                {draftSavedAt.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="material-symbols-outlined text-[18px]">history</span>
+              <span
+                className="text-[12px]"
+                style={{ fontFamily: "JetBrains Mono, monospace" }}
+              >
+                {lastUpdate}
+              </span>
+            </>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
