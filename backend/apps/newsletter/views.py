@@ -119,6 +119,69 @@ class SubscribeView(APIView):
         )
 
 
+def _send_welcome_email(subscriber: Subscriber):
+    """Abonelik onaylandıktan hemen sonra gönderilen hoşgeldin maili."""
+    site_url  = getattr(settings, "FRONTEND_URL", "https://akalin-cms.vercel.app")
+    back_url  = getattr(settings, "BACKEND_URL",  "https://akalin-backend.onrender.com")
+    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "onboarding@resend.dev")
+    unsub_url  = f"{back_url}/api/newsletter/unsubscribe/{subscriber.token}/"
+    blog_url   = f"{site_url}/tr/blog"
+
+    plain = (
+        "Merhaba!\n\n"
+        "Newsletter'a hoş geldiniz! Yeni yazılarımda sizi haberdar edeceğim.\n\n"
+        f"Blog: {blog_url}\n\n"
+        f"Abonelikten çıkmak için: {unsub_url}"
+    )
+
+    unsub_esc = html.escape(unsub_url)
+    blog_esc  = html.escape(blog_url)
+
+    html_body = f"""<!DOCTYPE html>
+<html lang="tr">
+<head><meta charset="UTF-8" /></head>
+<body style="margin:0;padding:0;background:#0a0d14;font-family:'Segoe UI',Arial,sans-serif;color:#e2e8f0;">
+  <div style="max-width:520px;margin:0 auto;padding:40px 16px;">
+
+    <div style="border-bottom:1px solid #1f2d4a;padding-bottom:20px;margin-bottom:28px;">
+      <span style="font-size:20px;font-weight:700;color:#e2e8f0;">Mehmet Akalın</span>
+      <span style="margin-left:10px;font-size:12px;color:#00d4ff;font-family:monospace;
+                   background:#003344;padding:2px 8px;border-radius:4px;">newsletter</span>
+    </div>
+
+    <h2 style="margin:0 0 12px;font-size:22px;font-weight:700;color:#e2e8f0;">
+      Hoş geldiniz! 🎉
+    </h2>
+    <p style="margin:0 0 20px;font-size:15px;line-height:1.7;color:#94a3b8;">
+      Newsletter'a başarıyla abone oldunuz. Yeni bir yazı yayınladığımda
+      sizi e-posta ile haberdar edeceğim.
+    </p>
+
+    <a href="{blog_esc}"
+       style="display:inline-block;background:#00d4ff;color:#0a0d14;
+              font-size:14px;font-weight:700;padding:12px 28px;
+              border-radius:8px;text-decoration:none;margin-bottom:28px;">
+      Blog'u Ziyaret Et &rarr;
+    </a>
+
+    <p style="margin:0;font-size:12px;color:#64748b;line-height:1.6;">
+      Aboneliği iptal etmek için
+      <a href="{unsub_esc}" style="color:#64748b;">buraya tıklayın</a>.
+    </p>
+  </div>
+</body>
+</html>"""
+
+    msg = EmailMultiAlternatives(
+        subject="Newsletter'a hoş geldiniz — Mehmet Akalın",
+        body=plain,
+        from_email=from_email,
+        to=[subscriber.email],
+    )
+    msg.attach_alternative(html_body, "text/html")
+    msg.send(fail_silently=True)   # hoşgeldin maili kritik değil, sessizce geç
+
+
 class ConfirmView(APIView):
     """GET /api/newsletter/confirm/<token>/  → frontend'e yönlendir"""
 
@@ -132,6 +195,10 @@ class ConfirmView(APIView):
 
         if not sub.is_active:
             sub.confirm()
+            try:
+                _send_welcome_email(sub)
+            except Exception as exc:
+                logger.warning("Hoşgeldin maili gönderilemedi: %s → %s", sub.email, exc)
 
         return redirect(f"{FRONTEND_URL}/tr/blog?newsletter=confirmed")
 

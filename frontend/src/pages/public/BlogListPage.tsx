@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 
@@ -6,6 +6,7 @@ import api from "../../api/axiosInstance";
 import { getPosts } from "../../api/posts";
 import NewsletterWidget from "../../components/NewsletterWidget";
 import { useDocumentMeta } from "../../hooks/useDocumentMeta";
+import { useJsonLd } from "../../hooks/useJsonLd";
 import type { BlogPostList, Category, PaginatedResponse, Tag } from "../../types";
 
 export default function BlogListPage() {
@@ -30,6 +31,19 @@ export default function BlogListPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [categories,  setCategories]  = useState<Category[]>([]);
   const [tags,        setTags]        = useState<Tag[]>([]);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  const SITE = "https://akalin-cms.vercel.app";
+  useJsonLd({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1,
+        "name": lang === "en" ? "Home" : "Ana Sayfa", "item": `${SITE}/${lang}/` },
+      { "@type": "ListItem", "position": 2,
+        "name": "Blog", "item": `${SITE}/${lang}/blog` },
+    ],
+  });
 
   /* ── Kategoriler + Taglar bir kez yükle ── */
   useEffect(() => {
@@ -76,13 +90,11 @@ export default function BlogListPage() {
   }, [search, activeCategory, activeTag]);
 
   /* ── Daha fazla yükle ── */
-  const handleLoadMore = () => {
+  const handleLoadMore = useCallback(() => {
+    if (loadingMore || !hasMore) return;
     setLoadingMore(true);
     const nextPage = currentPage + 1;
-    const params: Record<string, string> = {
-      page: String(nextPage),
-      page_size: "10",
-    };
+    const params: Record<string, string> = { page: String(nextPage), page_size: "10" };
     if (search)         params.search              = search;
     if (activeCategory) params["categories__slug"] = activeCategory;
     if (activeTag)      params["tags__slug"]        = activeTag;
@@ -94,7 +106,19 @@ export default function BlogListPage() {
         setHasMore(!!d.next);
       })
       .finally(() => setLoadingMore(false));
-  };
+  }, [loadingMore, hasMore, currentPage, search, activeCategory, activeTag]);
+
+  /* ── Infinite Scroll: sentinel div görünüme girince otomatik yükle ── */
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) handleLoadMore(); },
+      { rootMargin: "300px" },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [handleLoadMore]);
 
   /* ── Filtre yardımcıları ── */
   const setFilter = (key: string, value: string) => {
@@ -326,34 +350,17 @@ export default function BlogListPage() {
             ))}
           </div>
 
-          {/* Daha fazla yükle */}
-          {hasMore && (
-            <div className="flex justify-center mt-10">
-              <button
-                onClick={handleLoadMore}
-                disabled={loadingMore}
-                className="flex items-center gap-2 px-6 py-2.5 border border-outline-variant rounded-lg text-sm text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          {/* Infinite scroll sentinel + yükleniyor göstergesi */}
+          <div ref={sentinelRef} className="flex justify-center py-8">
+            {loadingMore && (
+              <span
+                className="material-symbols-outlined text-[28px] text-primary animate-spin"
+                style={{ animationDuration: "0.8s" }}
               >
-                {loadingMore ? (
-                  <>
-                    <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
-                    {t("common.loading")}
-                  </>
-                ) : (
-                  <>
-                    <span className="material-symbols-outlined text-[18px]">expand_more</span>
-                    {t("common.loadMore")}
-                    <span
-                      className="text-[11px] text-outline"
-                      style={{ fontFamily: "JetBrains Mono, monospace" }}
-                    >
-                      ({posts.length}/{totalCount})
-                    </span>
-                  </>
-                )}
-              </button>
-            </div>
-          )}
+                progress_activity
+              </span>
+            )}
+          </div>
 
           {/* Liste sonu */}
           {!hasMore && posts.length > 0 && posts.length === totalCount && totalCount > 10 && (

@@ -13,6 +13,7 @@ import CommentSection from "../../components/CommentSection";
 import { extractHeadingsAndAddIds } from "../../utils/tocUtils";
 import type { TocItem } from "../../utils/tocUtils";
 import { useDocumentMeta } from "../../hooks/useDocumentMeta";
+import { useJsonLd } from "../../hooks/useJsonLd";
 import { clImg } from "../../utils/cloudinary";
 import type { BlogPostDetail, BlogPostList } from "../../types";
 
@@ -93,6 +94,45 @@ export default function BlogPostPage() {
     articleSection:       post?.categories[0]?.name,
     articleTags:          post?.tags.map((tag) => tag.name),
   });
+
+  // ── JSON-LD: Article + BreadcrumbList ──────────────────────────────────────
+  const SITE = "https://akalin-cms.vercel.app";
+  useJsonLd(post ? {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": post.title,
+    "description": post.meta_description || post.summary || "",
+    "image": clImg(post.featured_image?.file_url, "og") || `${SITE}/og-image.png`,
+    "datePublished": post.created_at,
+    "dateModified": post.updated_at,
+    "inLanguage": lang === "en" ? "en" : "tr",
+    "url": `${SITE}/${lang}/blog/${post.slug}`,
+    "author": {
+      "@type": "Person",
+      "name": "Mehmet Akalın",
+      "url": SITE,
+    },
+    "publisher": {
+      "@type": "Person",
+      "name": "Mehmet Akalın",
+      "url": SITE,
+    },
+    "keywords": post.tags.map((t) => t.name).join(", "),
+    "articleSection": post.categories[0]?.name ?? "",
+  } : null);
+
+  useJsonLd(post ? {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": lang === "en" ? "Home" : "Ana Sayfa",
+        "item": `${SITE}/${lang}/` },
+      { "@type": "ListItem", "position": 2, "name": "Blog",
+        "item": `${SITE}/${lang}/blog` },
+      { "@type": "ListItem", "position": 3, "name": post.title,
+        "item": `${SITE}/${lang}/blog/${post.slug}` },
+    ],
+  } : null);
 
   useEffect(() => {
     if (!slug) return;

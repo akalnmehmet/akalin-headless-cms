@@ -5,6 +5,7 @@ import { getCareer } from "../../api/career";
 import { getSiteSettings } from "../../api/settings";
 import { trackCvDownload } from "../../api/analytics";
 import { useDocumentMeta } from "../../hooks/useDocumentMeta";
+import { useJsonLd } from "../../hooks/useJsonLd";
 import { clImg } from "../../utils/cloudinary";
 import type { CareerEntry, SiteSettings } from "../../types";
 
@@ -40,6 +41,18 @@ export default function AboutPage() {
     title:       settings ? `${settings.owner_name} — ${t("about.title")}` : `${t("about.title")} — Portföy`,
     description: settings?.about_bio || settings?.owner_bio || undefined,
   });
+
+  // ── JSON-LD: Person ─────────────────────────────────────────────────────────
+  useJsonLd(settings ? {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": settings.owner_name,
+    "jobTitle": settings.owner_title ?? "",
+    "description": settings.about_bio || settings.owner_bio || "",
+    "url": "https://akalin-cms.vercel.app",
+    "sameAs": [settings.github_url, settings.linkedin_url].filter(Boolean),
+    ...(settings.contact_email ? { "email": settings.contact_email } : {}),
+  } : null);
 
   useEffect(() => {
     Promise.all([getSiteSettings(), getCareer()])

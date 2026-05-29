@@ -17,11 +17,19 @@ from rest_framework.views import APIView
 from apps.posts.models import BlogPost
 from apps.projects.models import Project
 
+# PostgreSQL full-text search — SQLite (dev) ortamında ImportError alınabilir
+try:
+    from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
+    _PG_FTS_AVAILABLE = True
+except ImportError:
+    _PG_FTS_AVAILABLE = False
+
 
 class SearchView(APIView):
     """
     GET /api/search/?q=<query>
     Yayınlanmış blog yazıları + aktif projelerde birleşik arama.
+    PostgreSQL ortamında SearchVector+SearchRank kullanır; fallback: icontains.
     """
 
     permission_classes = [AllowAny]
@@ -31,22 +39,66 @@ class SearchView(APIView):
         if len(q) < 2:
             return Response({"results": []})
 
-        posts = (
-            BlogPost.objects
-            .filter(status=BlogPost.Status.PUBLISHED)
-            .filter(Q(title__icontains=q) | Q(summary__icontains=q))
-            .values("id", "title", "summary", "slug")[:5]
-        )
+        # ── Blog yazıları ────────────────────────────────────────────────────
+        try:
+            if _PG_FTS_AVAILABLE:
+                sq = SearchQuery(q, search_type="plain")
+                post_vec = (
+                    SearchVector("title",   weight="A") +
+                    SearchVector("summary", weight="B")
+                )
+                posts_qs = (
+                    BlogPost.objects
+                    .filter(status=BlogPost.Status.PUBLISHED)
+                    .annotate(rank=SearchRank(post_vec, sq))
+                    .filter(rank__gte=0.01)
+                    .order_by("-rank")
+                    .values("id", "title", "summary", "slug")[:6]
+                )
+                # FTS sıfır sonuç dönerse icontains ile tekrar dene
+                posts = list(posts_qs)
+                if not posts:
+                    raise ValueError("fts_empty")
+            else:
+                raise ValueError("no_fts")
+        except Exception:
+            posts = list(
+                BlogPost.objects
+                .filter(status=BlogPost.Status.PUBLISHED)
+                .filter(Q(title__icontains=q) | Q(summary__icontains=q))
+                .values("id", "title", "summary", "slug")[:6]
+            )
 
-        projects = (
-            Project.objects
-            .exclude(status=Project.Status.ARCHIVED)
-            .filter(Q(title__icontains=q) | Q(description__icontains=q))
-            .values("id", "title", "slug", "tech_stack")[:5]
-        )
+        # ── Projeler ─────────────────────────────────────────────────────────
+        try:
+            if _PG_FTS_AVAILABLE:
+                sq = SearchQuery(q, search_type="plain")
+                proj_vec = (
+                    SearchVector("title",       weight="A") +
+                    SearchVector("description", weight="B")
+                )
+                projects_qs = (
+                    Project.objects
+                    .exclude(status=Project.Status.ARCHIVED)
+                    .annotate(rank=SearchRank(proj_vec, sq))
+                    .filter(rank__gte=0.01)
+                    .order_by("-rank")
+                    .values("id", "title", "slug", "tech_stack")[:4]
+                )
+                projects = list(projects_qs)
+                if not projects:
+                    raise ValueError("fts_empty")
+            else:
+                raise ValueError("no_fts")
+        except Exception:
+            projects = list(
+                Project.objects
+                .exclude(status=Project.Status.ARCHIVED)
+                .filter(Q(title__icontains=q) | Q(description__icontains=q))
+                .values("id", "title", "slug", "tech_stack")[:4]
+            )
 
         results = []
-
         for p in posts:
             results.append({
                 "type": "post",
@@ -56,7 +108,6 @@ class SearchView(APIView):
                 "slug": p["slug"],
                 "icon": "article",
             })
-
         for p in projects:
             tech = p.get("tech_stack") or []
             subtitle = " · ".join(tech[:4]) if isinstance(tech, list) else ""
