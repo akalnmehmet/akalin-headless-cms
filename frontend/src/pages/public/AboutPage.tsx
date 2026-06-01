@@ -101,23 +101,62 @@ export default function AboutPage() {
 
         {/* ── CV Başlık ── */}
         <header className="mb-12 print:mb-8">
-          <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
-            {/* Profil Fotoğrafı */}
-            {settings?.owner_image && (
-              <div className="shrink-0 relative group print:hidden">
-                {/* Arka plan parlama efekti */}
-                <div className="absolute inset-0 bg-primary/10 rounded-3xl blur-xl group-hover:bg-primary/20 transition-all duration-300 -z-10" />
-                <div className="w-32 h-32 md:w-36 md:h-36 rounded-3xl overflow-hidden border border-outline-variant bg-surface-container shadow-md transition-transform duration-300 group-hover:scale-[1.02]">
-                  <img
-                    src={clImg(settings.owner_image.file_url, "avatar")}
-                    alt={settings.owner_name}
-                    className="w-full h-full object-cover"
-                  />
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-8">
+            {/* Sol kolon: fotoğraf + linkler */}
+            <div className="flex flex-col items-center gap-4 shrink-0 print:hidden">
+              {settings?.owner_image && (
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-primary/10 rounded-3xl blur-xl group-hover:bg-primary/20 transition-all duration-300 -z-10" />
+                  <div className="w-36 h-36 rounded-3xl overflow-hidden border border-outline-variant bg-surface-container shadow-md transition-transform duration-300 group-hover:scale-[1.02]">
+                    <img
+                      src={clImg(settings.owner_image.file_url, "avatar")}
+                      alt={settings.owner_name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                 </div>
+              )}
+              {/* Linkler */}
+              <div className="flex flex-col gap-2 w-full">
+                {settings?.github_url && (
+                  <a
+                    href={settings.github_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-outline-variant text-[12px] text-on-surface-variant hover:border-primary/40 hover:text-primary transition-colors duration-150"
+                    style={{ fontFamily: "JetBrains Mono, monospace" }}
+                  >
+                    <span className="material-symbols-outlined text-[15px]">code</span>
+                    GitHub
+                  </a>
+                )}
+                {settings?.linkedin_url && (
+                  <a
+                    href={settings.linkedin_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-outline-variant text-[12px] text-on-surface-variant hover:border-primary/40 hover:text-primary transition-colors duration-150"
+                    style={{ fontFamily: "JetBrains Mono, monospace" }}
+                  >
+                    <span className="material-symbols-outlined text-[15px]">work</span>
+                    LinkedIn
+                  </a>
+                )}
+                {settings?.contact_email && (
+                  <a
+                    href={`mailto:${settings.contact_email}`}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-primary/40 bg-primary/08 text-[12px] text-primary hover:bg-primary/15 transition-colors duration-150"
+                    style={{ fontFamily: "JetBrains Mono, monospace" }}
+                  >
+                    <span className="material-symbols-outlined text-[15px]">mail</span>
+                    {settings.contact_email}
+                  </a>
+                )}
               </div>
-            )}
+            </div>
 
-            <div className="flex-1 text-center md:text-left min-w-0">
+            {/* Sağ kolon: isim, unvan, bio */}
+            <div className="flex-1 min-w-0 text-center sm:text-left">
               <p
                 className="print:hidden text-[12px] font-semibold tracking-[0.12em] text-primary uppercase mb-3"
                 style={{ fontFamily: "JetBrains Mono, monospace" }}
@@ -134,47 +173,9 @@ export default function AboutPage() {
                 {settings?.owner_title ?? ""}
               </p>
               {(settings?.about_bio || settings?.owner_bio) && (
-                <p className="text-[15px] text-on-surface-variant leading-relaxed max-w-xl mx-auto md:mx-0">
+                <p className="text-[15px] text-on-surface-variant leading-relaxed">
                   {settings.about_bio || settings.owner_bio}
                 </p>
-              )}
-            </div>
-
-            {/* Linkler */}
-            <div className="flex flex-col gap-2 print:hidden shrink-0 w-full md:w-auto mt-4 md:mt-0 items-center md:items-stretch">
-              {settings?.github_url && (
-                <a
-                  href={settings.github_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-outline-variant text-[12px] text-on-surface-variant hover:border-primary/40 hover:text-primary transition-colors duration-150"
-                  style={{ fontFamily: "JetBrains Mono, monospace" }}
-                >
-                  <span className="material-symbols-outlined text-[15px]">code</span>
-                  GitHub
-                </a>
-              )}
-              {settings?.linkedin_url && (
-                <a
-                  href={settings.linkedin_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-outline-variant text-[12px] text-on-surface-variant hover:border-primary/40 hover:text-primary transition-colors duration-150"
-                  style={{ fontFamily: "JetBrains Mono, monospace" }}
-                >
-                  <span className="material-symbols-outlined text-[15px]">work</span>
-                  LinkedIn
-                </a>
-              )}
-              {settings?.contact_email && (
-                <a
-                  href={`mailto:${settings.contact_email}`}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-primary/40 bg-primary/08 text-[12px] text-primary hover:bg-primary/15 transition-colors duration-150"
-                  style={{ fontFamily: "JetBrains Mono, monospace" }}
-                >
-                  <span className="material-symbols-outlined text-[15px]">mail</span>
-                  {settings.contact_email}
-                </a>
               )}
             </div>
           </div>
