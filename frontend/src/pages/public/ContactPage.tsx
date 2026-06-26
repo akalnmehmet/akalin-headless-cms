@@ -1,8 +1,14 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Send, CheckCircle, AlertCircle, GitBranch, Link2, Loader2 } from "lucide-react";
 
 import { sendContact } from "../../api/contact";
 import { useDocumentMeta } from "../../hooks/useDocumentMeta";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 
 type FieldErrors = { name?: string; email?: string; message?: string };
 
@@ -47,24 +53,12 @@ export default function ContactPage() {
     }
   };
 
-  const inputCls = (hasError: boolean) =>
-    `w-full border rounded-xl bg-surface-container-lowest px-4 py-3 text-[15px] text-on-surface
-     placeholder:text-on-surface-variant/40 outline-none transition-colors duration-150
-     focus:ring-1 ${
-       hasError
-         ? "border-error focus:border-error focus:ring-error/30"
-         : "border-outline-variant focus:border-primary focus:ring-primary/20"
-     }`;
-
   return (
     <div className="pt-[100px] pb-24 px-4 sm:px-6 max-w-2xl mx-auto">
 
       {/* Başlık */}
       <header className="mb-12">
-        <p
-          className="text-[12px] font-semibold tracking-[0.12em] text-primary uppercase mb-3"
-          style={{ fontFamily: "JetBrains Mono, monospace" }}
-        >
+        <p className="text-[12px] font-semibold tracking-[0.12em] text-primary uppercase mb-3 font-mono">
           // {t("contact.title").toLowerCase()}
         </p>
         <h1 className="text-[40px] sm:text-[48px] font-bold tracking-[-0.02em] text-on-surface leading-[1.1] mb-4">
@@ -77,18 +71,16 @@ export default function ContactPage() {
 
       {/* Başarı mesajı */}
       {success && (
-        <div className="mb-8 flex items-start gap-3 px-5 py-4 rounded-xl border border-[#10b981]/20 bg-[#10b981]/08 text-[#10b981]">
-          <span className="material-symbols-outlined text-[20px] shrink-0 mt-0.5">check_circle</span>
-          <div>
-            <p className="text-[14px] font-semibold">{t("contact.successMessage")}</p>
-          </div>
+        <div className="mb-8 flex items-start gap-3 px-5 py-4 rounded-xl border border-tertiary/20 bg-tertiary/5 text-tertiary">
+          <CheckCircle className="h-5 w-5 shrink-0 mt-0.5" />
+          <p className="text-[14px] font-semibold">{t("contact.successMessage")}</p>
         </div>
       )}
 
       {/* Sunucu hatası */}
       {serverError && (
-        <div className="mb-6 flex items-center gap-2 px-4 py-3 rounded-xl border border-error/20 bg-error/08 text-error text-[13px]">
-          <span className="material-symbols-outlined text-[18px]">error</span>
+        <div className="mb-6 flex items-center gap-2 px-4 py-3 rounded-xl border border-error/20 bg-error/5 text-error text-[13px]">
+          <AlertCircle className="h-4 w-4" />
           {serverError}
         </div>
       )}
@@ -96,136 +88,120 @@ export default function ContactPage() {
       <form onSubmit={handleSubmit} noValidate className="space-y-5">
 
         {/* Ad */}
-        <div>
-          <label
-            className="block text-[11px] font-semibold tracking-[0.06em] text-on-surface-variant uppercase mb-2"
-            style={{ fontFamily: "JetBrains Mono, monospace" }}
-          >
+        <div className="space-y-1.5">
+          <Label htmlFor="contact-name" className="text-[11px] font-semibold tracking-[0.06em] text-on-surface-variant uppercase font-mono">
             {t("contact.name")}
-          </label>
-          <input
+          </Label>
+          <Input
+            id="contact-name"
             type="text"
             autoComplete="name"
             placeholder={t("contact.namePlaceholder")}
             value={name}
             onChange={(e) => setName(e.target.value)}
             disabled={submitting}
-            className={inputCls(!!fieldErrors.name)}
+            className={`h-12 text-[15px] bg-surface-container-lowest ${
+              fieldErrors.name ? "border-error focus-visible:ring-error/30" : "border-outline-variant focus-visible:ring-primary/20"
+            }`}
           />
           {fieldErrors.name && (
-            <p className="mt-1.5 text-[12px] text-error flex items-center gap-1">
-              <span className="material-symbols-outlined text-[13px]">error</span>
+            <p className="text-[12px] text-error flex items-center gap-1">
+              <AlertCircle className="h-3.5 w-3.5" />
               {fieldErrors.name}
             </p>
           )}
         </div>
 
         {/* E-posta */}
-        <div>
-          <label
-            className="block text-[11px] font-semibold tracking-[0.06em] text-on-surface-variant uppercase mb-2"
-            style={{ fontFamily: "JetBrains Mono, monospace" }}
-          >
+        <div className="space-y-1.5">
+          <Label htmlFor="contact-email" className="text-[11px] font-semibold tracking-[0.06em] text-on-surface-variant uppercase font-mono">
             {t("contact.email")}
-          </label>
-          <input
+          </Label>
+          <Input
+            id="contact-email"
             type="email"
             autoComplete="email"
             placeholder={t("contact.emailPlaceholder")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={submitting}
-            className={inputCls(!!fieldErrors.email)}
+            className={`h-12 text-[15px] bg-surface-container-lowest ${
+              fieldErrors.email ? "border-error focus-visible:ring-error/30" : "border-outline-variant focus-visible:ring-primary/20"
+            }`}
           />
           {fieldErrors.email && (
-            <p className="mt-1.5 text-[12px] text-error flex items-center gap-1">
-              <span className="material-symbols-outlined text-[13px]">error</span>
+            <p className="text-[12px] text-error flex items-center gap-1">
+              <AlertCircle className="h-3.5 w-3.5" />
               {fieldErrors.email}
             </p>
           )}
         </div>
 
         {/* Mesaj */}
-        <div>
-          <label
-            className="block text-[11px] font-semibold tracking-[0.06em] text-on-surface-variant uppercase mb-2 flex items-center justify-between"
-            style={{ fontFamily: "JetBrains Mono, monospace" }}
-          >
-            <span>{t("contact.message")}</span>
-            <span className={message.length > 1800 ? "text-error" : "text-on-surface-variant/50"}>
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="contact-message" className="text-[11px] font-semibold tracking-[0.06em] text-on-surface-variant uppercase font-mono">
+              {t("contact.message")}
+            </Label>
+            <span className={`text-[11px] font-mono ${message.length > 1800 ? "text-error" : "text-on-surface-variant/50"}`}>
               {message.length}/2000
             </span>
-          </label>
-          <textarea
+          </div>
+          <Textarea
+            id="contact-message"
             rows={6}
             placeholder={t("contact.messagePlaceholder")}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             maxLength={2000}
             disabled={submitting}
-            className={`${inputCls(!!fieldErrors.message)} resize-none`}
+            className={`text-[15px] bg-surface-container-lowest ${
+              fieldErrors.message ? "border-error focus-visible:ring-error/30" : "border-outline-variant focus-visible:ring-primary/20"
+            }`}
           />
           {fieldErrors.message && (
-            <p className="mt-1.5 text-[12px] text-error flex items-center gap-1">
-              <span className="material-symbols-outlined text-[13px]">error</span>
+            <p className="text-[12px] text-error flex items-center gap-1">
+              <AlertCircle className="h-3.5 w-3.5" />
               {fieldErrors.message}
             </p>
           )}
         </div>
 
-        <button
+        <Button
           type="submit"
           disabled={submitting || success}
-          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-primary text-on-primary text-[15px] font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity duration-150"
+          className="w-full h-12 text-[15px]"
+          size="lg"
         >
           {submitting ? (
-            <>
-              <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
-              {t("contact.sending")}
-            </>
+            <><Loader2 className="h-4 w-4 animate-spin" />{t("contact.sending")}</>
           ) : success ? (
-            <>
-              <span className="material-symbols-outlined text-[18px]">check</span>
-              {t("contact.sent")}
-            </>
+            <><CheckCircle className="h-4 w-4" />{t("contact.sent")}</>
           ) : (
-            <>
-              <span className="material-symbols-outlined text-[18px]">send</span>
-              {t("contact.send")}
-            </>
+            <><Send className="h-4 w-4" />{t("contact.send")}</>
           )}
-        </button>
+        </Button>
       </form>
 
       {/* Alternatif iletişim */}
-      <div className="mt-16 pt-8 border-t border-outline-variant">
-        <p
-          className="text-[11px] font-semibold tracking-[0.08em] text-on-surface-variant uppercase mb-4"
-          style={{ fontFamily: "JetBrains Mono, monospace" }}
-        >
+      <div className="mt-16 pt-8">
+        <Separator className="mb-8 bg-outline-variant" />
+        <p className="text-[11px] font-semibold tracking-[0.08em] text-on-surface-variant uppercase mb-4 font-mono">
           {t("contact.orDirectly")}
         </p>
         <div className="flex flex-wrap gap-3">
-          <a
-            href="https://github.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-outline-variant text-on-surface-variant hover:border-primary/40 hover:text-primary text-[13px] font-medium transition-colors duration-150"
-            style={{ fontFamily: "JetBrains Mono, monospace" }}
-          >
-            <span className="material-symbols-outlined text-[16px]">code</span>
-            GitHub
-          </a>
-          <a
-            href="https://linkedin.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-outline-variant text-on-surface-variant hover:border-primary/40 hover:text-primary text-[13px] font-medium transition-colors duration-150"
-            style={{ fontFamily: "JetBrains Mono, monospace" }}
-          >
-            <span className="material-symbols-outlined text-[16px]">work</span>
-            LinkedIn
-          </a>
+          <Button variant="outline" asChild className="border-outline-variant text-on-surface-variant hover:border-primary/40 hover:text-primary font-mono text-[13px]">
+            <a href="https://github.com" target="_blank" rel="noopener noreferrer">
+              <GitBranch className="h-4 w-4" />
+              GitHub
+            </a>
+          </Button>
+          <Button variant="outline" asChild className="border-outline-variant text-on-surface-variant hover:border-primary/40 hover:text-primary font-mono text-[13px]">
+            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer">
+              <Link2 className="h-4 w-4" />
+              LinkedIn
+            </a>
+          </Button>
         </div>
       </div>
     </div>

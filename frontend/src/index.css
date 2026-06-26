@@ -131,12 +131,76 @@
   /* Grid rengi */
   --grid-line-color:                rgba(37, 99, 235, 0.05);
   color-scheme: light;
+
+  /* ── shadcn/ui CSS Variables (Light) ── */
+  --background: 250 100% 99%;
+  --foreground: 224 16% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 224 16% 11%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 224 16% 11%;
+  --primary: 219 98% 54%;             /* #2563eb */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 261 73% 40%;           /* #5b21b6 */
+  --secondary-foreground: 0 0% 100%;
+  --muted: 234 14% 92%;
+  --muted-foreground: 234 13% 29%;
+  --accent: 234 14% 92%;
+  --accent-foreground: 224 16% 11%;
+  --destructive: 0 72% 41%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 234 18% 83%;
+  --input: 234 18% 83%;
+  --ring: 219 98% 54%;
+  --sidebar-background: 0 0% 100%;
+  --sidebar-foreground: 224 16% 11%;
+  --sidebar-primary: 219 98% 54%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 234 14% 92%;
+  --sidebar-accent-foreground: 224 16% 11%;
+  --sidebar-border: 234 18% 83%;
+  --sidebar-ring: 219 98% 54%;
 }
 
 /* ── Global base ─────────────────────────────────────────────────────────── */
 :root {
   --grid-line-color: rgba(0, 212, 255, 0.08);
   color-scheme: dark;
+
+  /* ── shadcn/ui CSS Variables (Dark — mapped to existing tokens) ── */
+  --background: 222 25% 7%;           /* #0a0d14 */
+  --foreground: 213 31% 91%;          /* #e2e8f0 */
+  --card: 222 22% 10%;                /* #111622 */
+  --card-foreground: 213 31% 91%;
+  --popover: 222 24% 12%;             /* #141929 */
+  --popover-foreground: 213 31% 91%;
+  --primary: 192 100% 50%;            /* #00d4ff */
+  --primary-foreground: 222 25% 7%;   /* #0a0d14 */
+  --secondary: 263 79% 56%;           /* #7c3aed */
+  --secondary-foreground: 0 0% 100%;
+  --muted: 222 22% 16%;               /* #1a2035 */
+  --muted-foreground: 215 20% 65%;    /* #94a3b8 */
+  --accent: 222 22% 16%;
+  --accent-foreground: 213 31% 91%;
+  --destructive: 0 84% 60%;           /* #ef4444 */
+  --destructive-foreground: 0 0% 100%;
+  --border: 213 27% 20%;              /* #1f2d4a */
+  --input: 213 27% 20%;
+  --ring: 192 100% 50%;               /* #00d4ff */
+  --radius: 0.5rem;
+  --chart-1: 192 100% 50%;
+  --chart-2: 263 79% 56%;
+  --chart-3: 160 84% 39%;
+  --chart-4: 45 93% 47%;
+  --chart-5: 0 84% 60%;
+  --sidebar-background: 222 22% 10%;
+  --sidebar-foreground: 213 31% 91%;
+  --sidebar-primary: 192 100% 50%;
+  --sidebar-primary-foreground: 222 25% 7%;
+  --sidebar-accent: 222 22% 16%;
+  --sidebar-accent-foreground: 213 31% 91%;
+  --sidebar-border: 213 27% 20%;
+  --sidebar-ring: 192 100% 50%;
 }
 
 body {
